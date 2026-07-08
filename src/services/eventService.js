@@ -24,21 +24,24 @@ async function handleEventMessage(client, message) {
 
   const { error } = await supabase.from("moderator_events").upsert(
     {
+      discord_message_id: message.id,
+
       moderator_discord_id: moderatorDiscordId,
       moderator_name: moderatorName,
 
-      event_title: message.content.slice(0, 120) || "Мероприятие",
+      event_channel_id: message.channel.id,
+      event_message_url: message.url,
+
+      title: message.content.slice(0, 120) || "Мероприятие",
+      content: message.content || null,
       event_description: message.content || null,
 
-      event_message_id: message.id,
-      event_channel_id: message.channel.id,
-      event_url: message.url,
-
-      created_by: message.author.id,
+      event_date: new Date().toISOString(),
       created_at: new Date().toISOString(),
+      created_by: message.author.id,
     },
     {
-      onConflict: "event_message_id",
+      onConflict: "discord_message_id",
     }
   );
 

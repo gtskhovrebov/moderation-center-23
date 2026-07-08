@@ -207,7 +207,13 @@ async function buildEventsEmbed(user) {
                 ? `<t:${Math.floor(new Date(e.created_at).getTime() / 1000)}:f>`
                 : "дата не найдена";
 
-              return `**${i + 1}.** ${safe(title).slice(0, 160)}\n${time}`;
+              const url = e.event_message_url || e.event_url || e.url || null;
+
+return [
+  `**${i + 1}.** ${safe(title).slice(0, 160)}`,
+  `${time}`,
+  url ? `🔗 [Перейти к мероприятию](${url})` : `🔗 Ссылка не найдена`,
+].join("\n");
             })
             .join("\n\n")
         : "Мероприятий пока нет.",

@@ -8,9 +8,7 @@ function isInRange(date, hours) {
 function accuracy(total, wrong) {
   total = Number(total || 0);
   wrong = Number(wrong || 0);
-
   if (total <= 0) return 100;
-
   return Number((((total - wrong) / total) * 100).toFixed(2));
 }
 
@@ -26,23 +24,20 @@ async function recalculateModeratorStatistics(discordId) {
 
   const list = punishments || [];
 
-  const p24 = list.filter((p) => isInRange(p.created_at, 24));
-  const p7d = list.filter((p) => isInRange(p.created_at, 24 * 7));
+  const p24 = list.filter(p => isInRange(p.created_at, 24));
+  const p7d = list.filter(p => isInRange(p.created_at, 24 * 7));
 
   const countType = (arr, type) =>
-    arr.filter((p) => p.punishment_type === type).length;
+    arr.filter(p => p.punishment_type === type).length;
 
-  const countWrong = (arr) =>
-    arr.filter((p) => p.review_status === "wrong").length;
+  const countWrong = arr =>
+    arr.filter(p => p.review_status === "wrong").length;
 
-  const countRemoved = (arr) =>
-    arr.filter((p) => p.removed || p.review_status === "removed").length;
+  const countRemoved = arr =>
+    arr.filter(p => p.removed || p.review_status === "removed").length;
 
-  const withProofs = list.filter((p) => Number(p.proof_count || 0) > 0).length;
-  const withoutProofs = list.filter((p) => Number(p.proof_count || 0) <= 0).length;
-
-  const totalPunishments = list.length;
-  const wrongPunishments = countWrong(list);
+  const withProofs = list.filter(p => Number(p.proof_count || 0) > 0).length;
+  const withoutProofs = list.filter(p => Number(p.proof_count || 0) <= 0).length;
 
   const { data: moderator } = await supabase
     .from("moderators")
@@ -50,43 +45,49 @@ async function recalculateModeratorStatistics(discordId) {
     .eq("discord_id", discordId)
     .maybeSingle();
 
-  await supabase.from("moderator_statistics").upsert(
-    {
-      discord_id: discordId,
+  const totalPunishments = list.length;
+  const wrongPunishments = countWrong(list);
 
-      username: moderator?.username || null,
-      display_name: moderator?.display_name || moderator?.nickname || null,
+  const payload = {
+    discord_id: discordId,
 
-      total_punishments: totalPunishments,
-      total_mutes: countType(list, "mute"),
-      total_bans: countType(list, "ban"),
+    username: moderator?.username || null,
+    display_name: moderator?.display_name || moderator?.nickname || null,
 
-      wrong_punishments: wrongPunishments,
-      removed_punishments: countRemoved(list),
+    total_punishments: totalPunishments,
+    total_mutes: countType(list, "mute"),
+    total_bans: countType(list, "ban"),
 
-      punishments_24h: p24.length,
-      mutes_24h: countType(p24, "mute"),
-      bans_24h: countType(p24, "ban"),
-      wrong_24h: countWrong(p24),
-      removed_24h: countRemoved(p24),
+    wrong_punishments: wrongPunishments,
+    removed_punishments: countRemoved(list),
 
-      punishments_7d: p7d.length,
-      mutes_7d: countType(p7d, "mute"),
-      bans_7d: countType(p7d, "ban"),
-      wrong_7d: countWrong(p7d),
-      removed_7d: countRemoved(p7d),
+    punishments_24h: p24.length,
+    mutes_24h: countType(p24, "mute"),
+    bans_24h: countType(p24, "ban"),
+    wrong_24h: countWrong(p24),
+    removed_24h: countRemoved(p24),
 
-      with_proofs: withProofs,
-      without_proofs: withoutProofs,
+    punishments_7d: p7d.length,
+    mutes_7d: countType(p7d, "mute"),
+    bans_7d: countType(p7d, "ban"),
+    wrong_7d: countWrong(p7d),
+    removed_7d: countRemoved(p7d),
 
-      accuracy: accuracy(totalPunishments, wrongPunishments),
+    with_proofs: withProofs,
+    without_proofs: withoutProofs,
 
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "discord_id",
-    }
-  );
+    accuracy: accuracy(totalPunishments, wrongPunishments),
+
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: upsertError } = await supabase
+    .from("moderator_statistics")
+    .upsert(payload, { onConflict: "discord_id" });
+
+  if (upsertError) throw upsertError;
+
+  return payload;
 }
 
 module.exports = {

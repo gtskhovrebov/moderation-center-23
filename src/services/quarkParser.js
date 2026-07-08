@@ -8,14 +8,15 @@ function getEmbedField(embed, fieldName) {
 
 function extractMentionId(text) {
   if (!text) return null;
-  const match = text.match(/<@!?(\d+)>/);
+
+  const match = String(text).match(/<@!?(\d+)>/);
   return match ? match[1] : null;
 }
 
 function cleanDiscordText(text) {
   if (!text) return "";
 
-  return text
+  return String(text)
     .replace(/<@!?(\d+)>/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -29,17 +30,17 @@ function extractModeratorFromBotReason(reason) {
   if (!reason) return null;
 
   const patterns = [
-    /(?:Мьют|Бан):\s*(.+?)\s*\(ID:\s*(\d+)\):\s*(.+)/i,
-    /^(.+?)\s*\(ID:\s*(\d+)\):\s*(.+)/i,
+    /(?:Мьют|Бан):\s*(.+?)\s*\(ID:\s*([^)]+)\):\s*(.+)/i,
+    /^(.+?)\s*\(ID:\s*([^)]+)\):\s*(.+)/i,
   ];
 
   for (const pattern of patterns) {
-    const match = reason.match(pattern);
+    const match = String(reason).match(pattern);
 
     if (match) {
       return {
         moderator_name: cleanModeratorName(match[1]),
-        moderator_discord_id: match[2].trim(),
+        moderator_external_id: String(match[2]).trim(),
         clean_reason: match[3].trim(),
       };
     }
@@ -50,8 +51,10 @@ function extractModeratorFromBotReason(reason) {
 
 function extractRule(reason) {
   if (!reason) return null;
+
   const cleaned = cleanDiscordText(reason);
   const ruleMatch = cleaned.match(/\b\d{1,3}([.,]\d{1,3}){0,3}\b/);
+
   return ruleMatch ? ruleMatch[0].replace(",", ".") : null;
 }
 
@@ -70,7 +73,7 @@ function extractDuration(text) {
 function extractExpiresAt(reason) {
   if (!reason) return null;
 
-  const match = reason.match(
+  const match = String(reason).match(
     /до\s+(\d{1,2})\s+([а-яё]+)\s+(\d{4})\s+г\.,\s+(\d{1,2}):(\d{2}):(\d{2})\s+UTC/i
   );
 
@@ -176,6 +179,8 @@ function parseQuarkMessage(message) {
     punishmentType = "ban";
   }
 
+  const moderatorDiscordId = extractMentionId(moderatorRaw);
+
   return {
     action_type: actionType,
     quark_message_id: message.id,
@@ -187,10 +192,19 @@ function parseQuarkMessage(message) {
     target_name: cleanDiscordText(userRaw),
 
     moderator_raw: moderatorRaw,
-    moderator_discord_id:
-      botReasonModerator?.moderator_discord_id || extractMentionId(moderatorRaw),
+
+    // ВАЖНО:
+    // moderator_discord_id берём ТОЛЬКО из Discord-упоминания.
+    // makarparfionov и другие ники из причины НЕ пишем как Discord ID.
+    moderator_discord_id: moderatorDiscordId,
+
+    moderator_external_id: botReasonModerator?.moderator_external_id || null,
+
     moderator_name:
-      botReasonModerator?.moderator_name || cleanModeratorName(moderatorRaw),
+      cleanModeratorName(moderatorRaw) ||
+      botReasonModerator?.moderator_name ||
+      botReasonModerator?.moderator_external_id ||
+      null,
 
     reason,
     rule_point: extractRule(reason),

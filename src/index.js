@@ -4,7 +4,6 @@ const config = require("./config/config");
 const ready = require("./events/ready");
 const guildMemberUpdate = require("./events/guildMemberUpdate");
 const messageCreate = require("./events/messageCreate");
-const { refreshAllModeratorCards } = require("./services/cardService");
 
 const client = new Client({
   intents: [
@@ -20,19 +19,7 @@ const client = new Client({
   ],
 });
 
-client.once("ready", async () => {
-  await ready(client);
-
-  console.log("♻️ Автообновление карточек включено: каждые 60 секунд");
-
-  setInterval(async () => {
-    try {
-      await refreshAllModeratorCards(client);
-    } catch (error) {
-      console.error("Auto refresh cards error:", error);
-    }
-  }, 60 * 1000);
-});
+client.once("ready", () => ready(client));
 
 client.on("guildMemberUpdate", (oldMember, newMember) =>
   guildMemberUpdate(client, oldMember, newMember)

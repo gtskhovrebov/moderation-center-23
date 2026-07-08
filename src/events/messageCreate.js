@@ -20,6 +20,12 @@ module.exports = async function messageCreate(client, message) {
   return;
 }
 
+// 🎉 Канал мероприятий
+if (message.channel.id === config.channels.events) {
+  await handleEventMessage(client, message);
+  return;
+}
+
   // 🧩 Канал Quark
   if (message.channel.id !== config.channels.quark) return;
 

@@ -10,6 +10,7 @@ const { updateModeratorCard } = require("./cardService");
 const supabase = require("../config/supabase");
 const config = require("../config/config");
 const { logToChannel } = require("../utils/logger");
+const { recalculateModeratorStatistics } = require("./statisticsRecalculateService");
 
 function getOriginalPunishmentType(removalType) {
   if (removalType === "unmute") return "mute";
@@ -129,6 +130,7 @@ async function handleRemoval(client, parsed) {
   }
 
   if (punishment.moderator_discord_id) {
+    await recalculateModeratorStatistics(punishment.moderator_discord_id);
     await updateModeratorCard(client, punishment.moderator_discord_id);
   }
 
@@ -198,6 +200,7 @@ async function savePunishment(client, parsed) {
     return;
   }
 
+  await recalculateModeratorStatistics(parsed.moderator_discord_id);
   await updateModeratorCard(client, parsed.moderator_discord_id);
   await sendProofRequestCard(client, parsed.quark_punishment_id);
 

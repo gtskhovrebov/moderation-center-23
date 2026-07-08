@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Донат недели</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+
+<body>
+
+<div class="bg1"></div>
+<div class="bg2"></div>
+
+<div class="container">
+
+<header>
+  <div>
+    <a href="/dashboard" class="back">← Назад</a>
+    <h1>Донат недели</h1>
+    <p>Рейтинг выплат, топ модераторов и зона риска</p>
+  </div>
+
+  <div class="donateBig">
+    <span>Итого</span>
+    <b><%= totalReward %> GC</b>
+  </div>
+</header>
+
+<section class="panel" id="rewards-panel">
+  <div class="panelHeader row">
+    <div>
+      <h3>Кураторы гос</h3>
+      <p>Сортировка от большей выплаты к меньшей</p>
+    </div>
+
+    <div class="actions">
+      <button class="button" onclick="copyRewards()">Скопировать для выдачи</button>
+      <button class="button" onclick="downloadBlock('rewards-panel', 'rewards-list.png')">Сохранить PNG</button>
+    </div>
+  </div>
+
+  <div class="rewardCards">
+    <% moderators
+      .slice()
+      .sort((a, b) => b.reward.finalReward - a.reward.finalReward)
+      .forEach((m, index) => {
+        const reward = m.reward.finalReward;
+        const activity = (m.punishments_7d || 0) + (m.events_7d || 0);
+        const wrong = m.wrong_punishments || 0;
+        const risk = reward <= 150 || activity <= 2 || wrong >= 2;
+        const top = index <= 2 || reward >= 450;
+    %>
+
+      <div class="rewardRow <%= top ? 'top' : '' %> <%= risk ? 'risk' : '' %>">
+        <div class="place">
+          <%= index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}` %>
+        </div>
+
+        <div class="rewardPerson">
+          <b><%= m.display_name || m.username || m.discord_id %></b>
+          <span>
+            Активность: <%= activity %> · Ошибок: <%= wrong %> · Мероприятий: <%= m.events_7d || 0 %>
+          </span>
+        </div>
+
+        <div class="rewardMeta">
+          <% if (top) { %>
+            <span class="badge good">Топ</span>
+          <% } %>
+
+          <% if (risk) { %>
+            <span class="badge danger">Зона риска</span>
+          <% } else { %>
+            <span class="badge normal">Норма</span>
+          <% } %>
+        </div>
+
+        <div class="rewardAmount">
+          <%= reward %>
+        </div>
+      </div>
+
+    <% }) %>
+  </div>
+</section>
+
+</div>
+
+<script>
+const rewards = <%- JSON.stringify(
+  moderators
+    .slice()
+    .sort((a, b) => b.reward.finalReward - a.reward.finalReward)
+    .map(m => ({
+      name: m.display_name || m.username || m.discord_id,
+      reward: m.reward.finalReward
+    }))
+) %>;
+
+function cleanNickname(name) {
+  return String(name || "")
+    .replace(/[^\wА-Яа-яЁё]/g, "")
+    .replace(/\s+/g, "_")
+    .trim();
+}
+
+function copyRewards() {
+  const text = [
+    "Кураторы гос",
+    ...rewards.map(item => `${cleanNickname(item.name)} ${item.reward}`)
+  ].join("\n");
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Список выплат скопирован");
+  });
+}
+
+async function downloadBlock(id, filename) {
+  const element = document.getElementById(id);
+
+  const canvas = await html2canvas(element, {
+    backgroundColor: "#080b13",
+    scale: 2,
+    useCORS: true,
+    scrollX: 0,
+    scrollY: 0,
+    windowWidth: element.scrollWidth,
+    windowHeight: element.scrollHeight
+  });
+
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+</script>
+
+</body>
+</html>

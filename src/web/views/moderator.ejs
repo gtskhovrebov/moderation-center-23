@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= moderator.display_name || moderator.username || moderator.discord_id %></title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+
+<body>
+
+<div class="bg1"></div>
+<div class="bg2"></div>
+
+<div class="container">
+
+<header>
+  <div>
+    <a href="/dashboard" class="back">← Назад</a>
+    <h1><%= moderator.display_name || moderator.username || moderator.discord_id %></h1>
+    <p>Персональная карточка модератора</p>
+  </div>
+
+  <div class="donateBig">
+    <span>Рекомендация</span>
+    <b><%= moderator.reward.finalReward %> GC</b>
+  </div>
+</header>
+
+<section id="moderator-card-png" class="moderatorExportCard">
+  <div class="exportTitle">
+    <h2><%= moderator.display_name || moderator.username || moderator.discord_id %></h2>
+    <p>Личная карточка модератора</p>
+  </div>
+
+  <div class="cards">
+  <div class="card">
+    <span>За 24 часа</span>
+    <h2><%= moderator.punishments_24h || 0 %></h2>
+  </div>
+
+  <div class="card">
+    <span>За неделю</span>
+    <h2><%= moderator.punishments_7d || 0 %></h2>
+  </div>
+
+  <div class="card">
+    <span>Всего</span>
+    <h2><%= moderator.total_punishments || 0 %></h2>
+  </div>
+
+  <div class="card red">
+    <span>Ошибок</span>
+    <h2><%= moderator.wrong_punishments || 0 %></h2>
+  </div>
+
+  <div class="card">
+    <span>Мероприятий</span>
+    <h2><%= moderator.events_7d || 0 %></h2>
+  </div>
+
+  <div class="card green">
+    <span>Донат</span>
+    <h2><%= moderator.reward.finalReward %> GC</h2>
+  </div>
+  <div class="actions pageActions">
+  <button class="button" onclick="downloadModeratorCard()">Сохранить карточку PNG</button>
+</div>
+</section>
+
+<section class="charts">
+  <div class="panel">
+    <h3>Расчёт доната</h3>
+
+    <div class="rewardList">
+      <p><span>База</span><b>+<%= moderator.reward.base %></b></p>
+      <p><span>Активность</span><b>+<%= moderator.reward.activityBonus %></b></p>
+      <p><span>Качество</span><b>+<%= moderator.reward.qualityBonus %></b></p>
+      <p><span>Доказательства</span><b>+<%= moderator.reward.proofBonus %></b></p>
+      <p><span>Мероприятия</span><b>+<%= moderator.reward.eventBonus %></b></p>
+      <p class="negative"><span>Ошибки</span><b>-<%= moderator.reward.wrongPenalty %></b></p>
+      <p class="negative"><span>Снятые</span><b>-<%= moderator.reward.removedPenalty %></b></p>
+      <p class="negative"><span>Без доказательств</span><b>-<%= moderator.reward.missingProofPenalty %></b></p>
+
+      <hr>
+
+      <p class="final">
+        <span>Итого</span>
+        <b><%= moderator.reward.finalReward %> GC</b>
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Последние мероприятия</h3>
+
+    <div class="activityList">
+      <% if (!events.length) { %>
+        <div class="empty">Мероприятий пока нет</div>
+      <% } %>
+
+      <% events.forEach(e => { %>
+        <div class="activityItem">
+          <b><%= e.event_title || "Мероприятие" %></b>
+          <span><%= new Date(e.created_at).toLocaleString("ru-RU") %></span>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panelHeader">
+    <h3>Последние наказания</h3>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Тип</th>
+        <th>Пользователь</th>
+        <th>Причина</th>
+        <th>Статус</th>
+        <th>Дата</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% punishments.forEach(p => { %>
+        <tr>
+          <td><b><%= String(p.punishment_type || "—").toUpperCase() %></b></td>
+          <td><%= p.target_name || p.target_discord_id || "—" %></td>
+          <td><%= p.reason || "—" %></td>
+          <td><%= p.review_status || "correct" %></td>
+          <td><%= new Date(p.created_at).toLocaleString("ru-RU") %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+</div>
+<script>
+async function downloadModeratorCard() {
+  const element = document.getElementById("moderator-card-png");
+
+  const canvas = await html2canvas(element, {
+    backgroundColor: "#080b13",
+    scale: 2
+  });
+
+  const link = document.createElement("a");
+  link.download = "moderator-card.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+</script>
+</body>
+</html>

@@ -434,9 +434,27 @@ async function updateModeratorCard(client, discordId) {
     );
   }
 }
+async function refreshAllModeratorCards(client) {
+  const { data: moderators, error } = await supabase
+    .from("moderators")
+    .select("*")
+    .eq("is_active", true);
 
+  if (error) {
+    await logToChannel(client, `❌ Ошибка массового обновления карточек: ${error.message}`);
+    return;
+  }
+
+  for (const moderator of moderators || []) {
+    if (!moderator.discord_id) continue;
+    await updateModeratorCard(client, moderator.discord_id);
+  }
+
+  await logToChannel(client, `♻️ Массовое обновление карточек завершено: ${moderators?.length || 0}`);
+}
 module.exports = {
   createModeratorCard,
   archiveModeratorCard,
   updateModeratorCard,
+  refreshAllModeratorCards,
 };

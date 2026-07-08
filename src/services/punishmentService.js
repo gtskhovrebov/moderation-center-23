@@ -12,10 +12,73 @@ const config = require("../config/config");
 const { logToChannel } = require("../utils/logger");
 const { recalculateModeratorStatistics } = require("./statisticsRecalculateService");
 
+function normalizeName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-zа-яё0-9_]/gi, "")
+    .trim();
+}
+
 function getOriginalPunishmentType(removalType) {
   if (removalType === "unmute") return "mute";
   if (removalType === "unban") return "ban";
   return null;
+}
+
+async function resolveModeratorDiscordId(client, parsed) {
+  if (parsed.moderator_discord_id && /^\d{15,25}$/.test(parsed.moderator_discord_id)) {
+    return parsed.moderator_discord_id;
+  }
+
+  const candidates = [
+    parsed.moderator_external_id,
+    parsed.moderator_name,
+    parsed.moderator_raw,
+  ]
+    .filter(Boolean)
+    .map(normalizeName)
+    .filter(Boolean);
+
+  if (!candidates.length) return null;
+
+  const { data: moderators } = await supabase
+    .from("moderators")
+    .select("*")
+    .eq("is_active", true);
+
+  for (const moderator of moderators || []) {
+    const values = [
+      moderator.username,
+      moderator.nickname,
+      moderator.display_name,
+    ]
+      .filter(Boolean)
+      .map(normalizeName);
+
+    if (values.some((value) => candidates.includes(value))) {
+      return moderator.discord_id;
+    }
+  }
+
+  const guild = await client.guilds.fetch(config.guildId).catch(() => null);
+  if (!guild) return null;
+
+  const members = await guild.members.fetch().catch(() => null);
+  if (!members) return null;
+
+  const found = members.find((member) => {
+    const values = [
+      member.user.username,
+      member.displayName,
+      member.nickname,
+    ]
+      .filter(Boolean)
+      .map(normalizeName);
+
+    return values.some((value) => candidates.includes(value));
+  });
+
+  return found?.id || null;
 }
 
 async function sendLinkRequiredCard(client, parsed) {
@@ -31,6 +94,9 @@ async function sendLinkRequiredCard(client, parsed) {
     .setDescription([
       `🆔 **ID наказания:**`,
       `\`${parsed.quark_punishment_id}\``,
+      ``,
+      `👮 **Модератор из Quark:**`,
+      `${parsed.moderator_external_id || parsed.moderator_name || parsed.moderator_raw || "не найден"}`,
       ``,
       `👤 **Пользователь:**`,
       `${parsed.target_raw || "не найден"}`,
@@ -94,28 +160,11 @@ async function handleRemoval(client, parsed) {
     return;
   }
 
-  if (punishment.expires_at) {
-    const now = Date.now();
-    const expiresAt = new Date(punishment.expires_at).getTime();
-
-    if (now >= expiresAt) {
-      await logToChannel(
-        client,
-        `ℹ️ Снятие проигнорировано как истёкшее по сроку: **${originalType}** | пользователь: ${parsed.target_raw}`
-      );
-      return;
-    }
-  }
-
   const { error } = await supabase
     .from("punishments")
     .update({
       removed: true,
-      removed_by:
-        parsed.moderator_discord_id ||
-        parsed.moderator_name ||
-        parsed.moderator_raw ||
-        null,
+      removed_by: parsed.moderator_discord_id || parsed.moderator_name || null,
       removed_at: new Date().toISOString(),
       removal_reason: parsed.reason || null,
       removal_source: parsed.proof_url || null,
@@ -146,15 +195,16 @@ async function savePunishment(client, parsed) {
     return;
   }
 
-  const realModeratorDetected = Boolean(parsed?.moderator_discord_id);
+  const resolvedModeratorId = await resolveModeratorDiscordId(client, parsed);
+  const realModeratorDetected = Boolean(resolvedModeratorId);
 
   const { error } = await supabase.from("punishments").upsert(
     {
       quark_message_id: parsed.quark_message_id,
       quark_punishment_id: parsed.quark_punishment_id,
 
-      moderator_discord_id: realModeratorDetected ? parsed.moderator_discord_id : null,
-      moderator_name: parsed.moderator_name || parsed.moderator_raw || null,
+      moderator_discord_id: realModeratorDetected ? resolvedModeratorId : null,
+      moderator_name: parsed.moderator_name || parsed.moderator_raw || parsed.moderator_external_id || null,
 
       target_discord_id: parsed.target_discord_id || null,
       target_name: parsed.target_raw || null,
@@ -195,18 +245,18 @@ async function savePunishment(client, parsed) {
 
     await logToChannel(
       client,
-      `⚠️ Наказание требует привязки: **${parsed.punishment_type}** | пользователь: ${parsed.target_raw || "не найден"}`
+      `⚠️ Наказание требует привязки: **${parsed.punishment_type}** | модератор из Quark: **${parsed.moderator_external_id || parsed.moderator_name || "не найден"}**`
     );
     return;
   }
 
-  await recalculateModeratorStatistics(parsed.moderator_discord_id);
-  await updateModeratorCard(client, parsed.moderator_discord_id);
+  await recalculateModeratorStatistics(resolvedModeratorId);
+  await updateModeratorCard(client, resolvedModeratorId);
   await sendProofRequestCard(client, parsed.quark_punishment_id);
 
   await logToChannel(
     client,
-    `✅ Наказание записано: **${parsed.punishment_type}** | модератор: <@${parsed.moderator_discord_id}> | причина: **${parsed.reason || "не указана"}**`
+    `✅ Наказание записано: **${parsed.punishment_type}** | модератор: <@${resolvedModeratorId}> | причина: **${parsed.reason || "не указана"}**`
   );
 }
 

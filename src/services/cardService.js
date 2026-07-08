@@ -103,17 +103,81 @@ function buildModeratorCardButtons(discordId) {
   );
 }
 
+function isInRange(date, hours) {
+  if (!date) return false;
+
+  const time = new Date(date).getTime();
+  const border = Date.now() - hours * 60 * 60 * 1000;
+
+  return time >= border;
+}
+
+function countType(list, type) {
+  return list.filter((p) => p.punishment_type === type).length;
+}
+
+function countRemoved(list) {
+  return list.filter((p) => p.removed || p.review_status === "removed").length;
+}
+
+function countWrong(list) {
+  return list.filter((p) => p.review_status === "wrong").length;
+}
+
+function accuracy(total, wrong) {
+  total = Number(total || 0);
+  wrong = Number(wrong || 0);
+
+  if (total <= 0) return 100;
+
+  return Number((((total - wrong) / total) * 100).toFixed(2));
+}
+
 async function getModeratorStats(discordId) {
-  const { data, error } = await supabase
-    .from("moderator_statistics")
+  const { data: punishments, error } = await supabase
+    .from("punishments")
     .select("*")
-    .eq("discord_id", discordId)
-    .maybeSingle();
+    .eq("moderator_discord_id", discordId);
 
   if (error) {
-  console.error("getModeratorStats error:", error);
-  return null;
-}
+    console.error("Ошибка загрузки punishments для карточки:", error.message);
+    return null;
+  }
+
+  const list = punishments || [];
+
+  const last24h = list.filter((p) => isInRange(p.created_at, 24));
+  const last7d = list.filter((p) => isInRange(p.created_at, 24 * 7));
+
+  const totalPunishments = list.length;
+  const wrongPunishments = countWrong(list);
+
+  return {
+    discord_id: discordId,
+
+    total_punishments: totalPunishments,
+    total_mutes: countType(list, "mute"),
+    total_bans: countType(list, "ban"),
+    removed_punishments: countRemoved(list),
+    wrong_punishments: wrongPunishments,
+
+    punishments_24h: last24h.length,
+    mutes_24h: countType(last24h, "mute"),
+    bans_24h: countType(last24h, "ban"),
+    removed_24h: countRemoved(last24h),
+    wrong_24h: countWrong(last24h),
+
+    punishments_7d: last7d.length,
+    mutes_7d: countType(last7d, "mute"),
+    bans_7d: countType(last7d, "ban"),
+    removed_7d: countRemoved(last7d),
+    wrong_7d: countWrong(last7d),
+
+    with_proofs: list.filter((p) => Number(p.proof_count || 0) > 0).length,
+    without_proofs: list.filter((p) => Number(p.proof_count || 0) <= 0).length,
+
+    accuracy: accuracy(totalPunishments, wrongPunishments),
+  };
 }
 
 async function findExistingThread(client, member) {

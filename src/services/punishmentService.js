@@ -41,22 +41,24 @@ async function resolveModeratorDiscordId(client, parsed) {
 
   if (!candidates.length) return null;
 
-  const { data: moderators } = await supabase
+  const { data: moderators, error } = await supabase
     .from("moderators")
     .select("*")
     .eq("is_active", true);
 
-  for (const moderator of moderators || []) {
-    const values = [
-      moderator.username,
-      moderator.nickname,
-      moderator.display_name,
-    ]
-      .filter(Boolean)
-      .map(normalizeName);
+  if (!error) {
+    for (const moderator of moderators || []) {
+      const values = [
+        moderator.username,
+        moderator.nickname,
+        moderator.display_name,
+      ]
+        .filter(Boolean)
+        .map(normalizeName);
 
-    if (values.some((value) => candidates.includes(value))) {
-      return moderator.discord_id;
+      if (values.some((value) => candidates.includes(value))) {
+        return moderator.discord_id;
+      }
     }
   }
 
@@ -132,6 +134,12 @@ async function sendLinkRequiredCard(client, parsed) {
   });
 }
 
+function safeRecalculateModeratorStatistics(discordId) {
+  recalculateModeratorStatistics(discordId).catch((error) => {
+    console.error("recalculateModeratorStatistics error:", error.message);
+  });
+}
+
 async function handleRemoval(client, parsed) {
   const originalType = getOriginalPunishmentType(parsed.punishment_type);
 
@@ -179,8 +187,8 @@ async function handleRemoval(client, parsed) {
   }
 
   if (punishment.moderator_discord_id) {
-    await recalculateModeratorStatistics(punishment.moderator_discord_id);
     await updateModeratorCard(client, punishment.moderator_discord_id);
+    safeRecalculateModeratorStatistics(punishment.moderator_discord_id);
   }
 
   await logToChannel(
@@ -250,9 +258,9 @@ async function savePunishment(client, parsed) {
     return;
   }
 
-  await recalculateModeratorStatistics(resolvedModeratorId);
   await updateModeratorCard(client, resolvedModeratorId);
   await sendProofRequestCard(client, parsed.quark_punishment_id);
+  safeRecalculateModeratorStatistics(resolvedModeratorId);
 
   await logToChannel(
     client,

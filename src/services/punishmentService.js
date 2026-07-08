@@ -3,6 +3,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  escapeMarkdown,
 } = require("discord.js");
 
 const { sendProofRequestCard } = require("./proofService");
@@ -19,6 +20,10 @@ function normalizeName(value) {
     .trim();
 }
 
+function safeText(value) {
+  return escapeMarkdown(String(value || "не найден"));
+}
+
 function getOriginalPunishmentType(removalType) {
   if (removalType === "unmute") return "mute";
   if (removalType === "unban") return "ban";
@@ -26,6 +31,13 @@ function getOriginalPunishmentType(removalType) {
 }
 
 async function resolveModeratorDiscordId(client, parsed) {
+  const BOT_IDS = [
+    "310848622642069504", // JuniperBot
+];
+
+if (BOT_IDS.includes(parsed.moderator_discord_id)) {
+    parsed.moderator_discord_id = null;
+}
   if (parsed.moderator_discord_id && /^\d{15,25}$/.test(parsed.moderator_discord_id)) {
     return parsed.moderator_discord_id;
   }
@@ -98,16 +110,16 @@ async function sendLinkRequiredCard(client, parsed) {
       `\`${parsed.quark_punishment_id}\``,
       ``,
       `👮 **Модератор из Quark:**`,
-      `${parsed.moderator_external_id || parsed.moderator_name || parsed.moderator_raw || "не найден"}`,
+      `${safeText(parsed.moderator_external_id || parsed.moderator_name || parsed.moderator_raw)}`
       ``,
       `👤 **Пользователь:**`,
-      `${parsed.target_raw || "не найден"}`,
+      `${safeText(parsed.target_raw)}`
       ``,
       `🔨 **Тип:**`,
       `${parsed.punishment_type}`,
       ``,
       `📖 **Причина:**`,
-      `${parsed.reason || "не указана"}`,
+      `${safeText(parsed.reason || "не указана")}`
       ``,
       `🔗 **Ссылка на Quark:**`,
       `${parsed.proof_url}`,
@@ -253,7 +265,7 @@ async function savePunishment(client, parsed) {
 
     await logToChannel(
       client,
-      `⚠️ Наказание требует привязки: **${parsed.punishment_type}** | модератор из Quark: **${parsed.moderator_external_id || parsed.moderator_name || "не найден"}**`
+      `⚠️ Наказание требует привязки: **${parsed.punishment_type}** | модератор из Quark: **${safeText(parsed.moderator_external_id || parsed.moderator_name)}**`
     );
     return;
   }

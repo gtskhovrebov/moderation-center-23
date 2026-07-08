@@ -4,12 +4,17 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  escapeMarkdown,
 } = require("discord.js");
 
 const supabase = require("../config/supabase");
 const config = require("../config/config");
 const { logToChannel } = require("../utils/logger");
 const { calculateWeeklyReward } = require("./rewardService");
+
+function safeText(value) {
+  return escapeMarkdown(String(value || "не найден"));
+}
 
 function isInRange(date, hours) {
   if (!date) return false;
@@ -133,7 +138,7 @@ function buildModeratorCard(member, stats = {}) {
   const reward = calculateWeeklyReward(stats);
 
   return new EmbedBuilder()
-    .setTitle(`👮 ${member.displayName}`)
+    .setTitle(`👮 ${safeText(member.displayName)}`)
     .setDescription([
       `🟢 **Статус:** активен`,
       ``,
@@ -237,7 +242,7 @@ async function saveModeratorRecord(client, member, threadId, messageId) {
   if (error) {
     await logToChannel(
       client,
-      `❌ Ошибка сохранения модератора **${member.displayName}**: ${error.message}`
+      `❌ Ошибка сохранения модератора **${safeText(member.displayName)}**: ${error.message}`
     );
     return false;
   }
@@ -277,12 +282,12 @@ async function createModeratorCard(client, member) {
 
       await saveModeratorRecord(client, member, existing.forum_thread_id, existing.forum_message_id);
 
-      await logToChannel(client, `♻️ Карточка модератора обновлена: **${member.displayName}**`);
+      await logToChannel(client, `♻️ Карточка модератора обновлена: **${safeText(member.displayName)}**`);
       return;
     } catch (error) {
       await logToChannel(
         client,
-        `⚠️ Карточка была в базе, но не найдена в Discord. Создаю/ищу новую: **${member.displayName}**`
+        `⚠️ Карточка была в базе, но не найдена в Discord. Создаю/ищу новую: **${safeText(member.displayName)}**`
       );
     }
   }
@@ -308,7 +313,7 @@ async function createModeratorCard(client, member) {
     }
 
     await saveModeratorRecord(client, member, existingThread.id, starterMessage.id);
-    await logToChannel(client, `♻️ Найдена и привязана существующая карточка модератора: **${member.displayName}**`);
+    await logToChannel(client, `♻️ Найдена и привязана существующая карточка модератора: **${safeText(member.displayName)}**`);
     return;
   }
 
@@ -324,7 +329,7 @@ async function createModeratorCard(client, member) {
 
   await saveModeratorRecord(client, member, thread.id, starterMessage.id);
 
-  await logToChannel(client, `✅ Создана карточка модератора: **${member.displayName}**`);
+  await logToChannel(client, `✅ Создана карточка модератора: **${safeText(member.displayName)}**`);
 }
 
 async function archiveModeratorCard(client, member) {
@@ -345,7 +350,7 @@ async function archiveModeratorCard(client, member) {
     .eq("discord_id", member.id);
 
   if (error) {
-    await logToChannel(client, `❌ Ошибка снятия модератора **${member.displayName}**: ${error.message}`);
+    await logToChannel(client, `❌ Ошибка снятия модератора **${safeText(member.displayName)}**: ${error.message}`);
     return;
   }
 
@@ -359,7 +364,7 @@ async function archiveModeratorCard(client, member) {
     }
   }
 
-  await logToChannel(client, `🔴 Модератор снят: **${member.displayName}**`);
+  await logToChannel(client, `🔴 Модератор снят: **${safeText(member.displayName)}**`);
 }
 
 async function updateModeratorCard(client, discordId) {
@@ -384,10 +389,12 @@ async function updateModeratorCard(client, discordId) {
     }
 
     if (!moderator?.forum_thread_id || !moderator?.forum_message_id) {
-      await logToChannel(client, `⚠️ Карточка <@${discordId}> не найдена в базе. Создаю новую.`);
-      await createModeratorCard(client, member);
-      return;
-    }
+    await logToChannel(
+        client,
+        `⚠️ Карточка для ${member.displayName} отсутствует. Обновление пропущено.`
+    );
+    return;
+}
 
     const stats = await getModeratorStats(discordId);
 
@@ -426,7 +433,7 @@ async function updateModeratorCard(client, discordId) {
       })
       .eq("discord_id", discordId);
 
-    await logToChannel(client, `✅ Карточка обновлена: **${member.displayName}**`);
+    await logToChannel(client, `✅ Карточка обновлена: **${safeText(member.displayName)}**`);
   } catch (error) {
     await logToChannel(
       client,

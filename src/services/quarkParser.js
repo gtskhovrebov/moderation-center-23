@@ -8,7 +8,6 @@ function getEmbedField(embed, fieldName) {
 
 function extractMentionId(text) {
   if (!text) return null;
-
   const match = String(text).match(/<@!?(\d+)>/);
   return match ? match[1] : null;
 }
@@ -26,6 +25,10 @@ function cleanModeratorName(text) {
   return cleanDiscordText(text).replace(/\(\s*\)$/g, "").trim();
 }
 
+function isDiscordId(value) {
+  return /^\d{15,25}$/.test(String(value || ""));
+}
+
 function extractModeratorFromBotReason(reason) {
   if (!reason) return null;
 
@@ -38,9 +41,12 @@ function extractModeratorFromBotReason(reason) {
     const match = String(reason).match(pattern);
 
     if (match) {
+      const id = String(match[2]).trim();
+
       return {
         moderator_name: cleanModeratorName(match[1]),
-        moderator_external_id: String(match[2]).trim(),
+        moderator_discord_id: isDiscordId(id) ? id : null,
+        moderator_external_id: isDiscordId(id) ? null : id,
         clean_reason: match[3].trim(),
       };
     }
@@ -51,10 +57,8 @@ function extractModeratorFromBotReason(reason) {
 
 function extractRule(reason) {
   if (!reason) return null;
-
   const cleaned = cleanDiscordText(reason);
   const ruleMatch = cleaned.match(/\b\d{1,3}([.,]\d{1,3}){0,3}\b/);
-
   return ruleMatch ? ruleMatch[0].replace(",", ".") : null;
 }
 
@@ -122,6 +126,16 @@ function isAutomaticExpiration(reason, title) {
   );
 }
 
+function isBotModeratorRaw(text) {
+  const cleaned = cleanDiscordText(text).toLowerCase();
+
+  return (
+    cleaned.includes("juniperbot") ||
+    cleaned.includes("quark") ||
+    cleaned.includes("#6999")
+  );
+}
+
 function parseQuarkMessage(message) {
   const embed = message.embeds?.[0];
   if (!embed) return null;
@@ -179,7 +193,9 @@ function parseQuarkMessage(message) {
     punishmentType = "ban";
   }
 
-  const moderatorDiscordId = extractMentionId(moderatorRaw);
+  const moderatorIdFromRaw = isBotModeratorRaw(moderatorRaw)
+    ? null
+    : extractMentionId(moderatorRaw);
 
   return {
     action_type: actionType,
@@ -193,18 +209,19 @@ function parseQuarkMessage(message) {
 
     moderator_raw: moderatorRaw,
 
-    // ВАЖНО:
-    // moderator_discord_id берём ТОЛЬКО из Discord-упоминания.
-    // makarparfionov и другие ники из причины НЕ пишем как Discord ID.
-    moderator_discord_id: moderatorDiscordId,
+    // Главное: сначала берём реального модератора из причины.
+    moderator_discord_id:
+      botReasonModerator?.moderator_discord_id ||
+      moderatorIdFromRaw ||
+      null,
 
-    moderator_external_id: botReasonModerator?.moderator_external_id || null,
-
-    moderator_name:
-      cleanModeratorName(moderatorRaw) ||
-      botReasonModerator?.moderator_name ||
+    moderator_external_id:
       botReasonModerator?.moderator_external_id ||
       null,
+
+    moderator_name:
+      botReasonModerator?.moderator_name ||
+      (!isBotModeratorRaw(moderatorRaw) ? cleanModeratorName(moderatorRaw) : null),
 
     reason,
     rule_point: extractRule(reason),

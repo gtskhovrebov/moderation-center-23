@@ -5,6 +5,11 @@ const { parseQuarkMessage } = require("../services/quarkParser");
 const { savePunishment } = require("../services/punishmentService");
 const { handlePunishmentSearchCommand } = require("../services/searchPunishmentService");
 const { handleEventMessage } = require("../services/eventService");
+const { EmbedBuilder, escapeMarkdown } = require("discord.js");
+
+function safeText(value) {
+  return escapeMarkdown(String(value || "не найден"));
+}
 
 module.exports = async function messageCreate(client, message) {
   try {
@@ -51,12 +56,11 @@ module.exports = async function messageCreate(client, message) {
       [
         `🧩 Quark распознан:`,
         `Тип: ${parsed.punishment_type}`,
-        `Модератор raw: ${parsed.moderator_raw || "нет"}`,
-        `Модератор Discord ID: ${parsed.moderator_discord_id || "не найден"}`,
-        `Модератор external: ${parsed.moderator_external_id || "не найден"}`,
-        `Модератор name: ${parsed.moderator_name || "не найден"}`,
-        `Пользователь: ${parsed.target_raw}`,
-        `Причина: ${parsed.reason}`,
+        `Модератор raw: ${safeText(parsed.moderator_raw || "нет")}`,
+        `Модератор external: ${safeText(parsed.moderator_external_id)}`,
+        `Модератор name: ${safeText(parsed.moderator_name)}`,
+        `Пользователь: ${safeText(parsed.target_raw)}`,
+        `Причина: ${safeText(parsed.reason)}`,
       ].join("\n")
     );
 

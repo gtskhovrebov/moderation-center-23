@@ -63,7 +63,7 @@ async function buildStatsEmbed(target) {
     .setDescription(`👮 **${stats.display_name || target.username}**`)
     .addFields(
       {
-        name: "⏱️ За 24 часа",
+        name: "📅 За сегодня",
         value: [
           `Наказаний: **${stats.punishments_24h || 0}**`,
           `Мутов: **${stats.mutes_24h || 0}**`,

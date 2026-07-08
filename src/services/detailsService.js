@@ -68,7 +68,7 @@ async function handleDetailsInteraction(interaction) {
       `Неверных: **${stats.wrong_7d || 0}**`,
       `Точность: **${acc7d}%**`,
       ``,
-      `## За 24 часа`,
+      `## За сегодня`,
       `Всего: **${stats.punishments_24h || 0}**`,
       `Мутов: **${stats.mutes_24h || 0}**`,
       `Банов: **${stats.bans_24h || 0}**`,
@@ -81,7 +81,7 @@ async function handleDetailsInteraction(interaction) {
       `Без доказательств: **${stats.without_proofs || 0}**`,
       ``,
       `## Мероприятия`,
-      `За 24 часа: **${stats.events_24h || 0}**`,
+      `За сегодня: **${stats.events_24h || 0}**`,
       `За неделю: **${stats.events_7d || 0}**`,
       `Всего: **${stats.events_total || 0}**`,
     ].join("\n"))

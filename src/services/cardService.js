@@ -16,6 +16,40 @@ function safeText(value) {
   return escapeMarkdown(String(value || "не найден"));
 }
 
+function isTodayMoscow(date) {
+  if (!date) return false;
+
+  const input = new Date(date);
+
+  const nowMoscow = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  const inputMoscow = new Date(
+    input.toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  return (
+    inputMoscow.getFullYear() === nowMoscow.getFullYear() &&
+    inputMoscow.getMonth() === nowMoscow.getMonth() &&
+    inputMoscow.getDate() === nowMoscow.getDate()
+  );
+}
+
+function isTodayMoscow(date) {
+  if (!date) return false;
+
+  const input = new Date(date);
+  const nowMoscow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
+  const inputMoscow = new Date(input.toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
+
+  return (
+    inputMoscow.getFullYear() === nowMoscow.getFullYear() &&
+    inputMoscow.getMonth() === nowMoscow.getMonth() &&
+    inputMoscow.getDate() === nowMoscow.getDate()
+  );
+}
+
 function isInRange(date, hours) {
   if (!date) return false;
   return new Date(date).getTime() >= Date.now() - hours * 60 * 60 * 1000;
@@ -64,10 +98,10 @@ async function getModeratorStats(discordId) {
   const pList = punishments || [];
   const eList = events || [];
 
-  const p24 = pList.filter((p) => isInRange(p.created_at, 24));
+  const p24 = pList.filter((p) => isTodayMoscow(p.created_at));
   const p7d = pList.filter((p) => isInRange(p.created_at, 24 * 7));
 
-  const e24 = eList.filter((e) => isInRange(e.created_at, 24));
+  const e24 = eList.filter((e) => isTodayMoscow(e.created_at));
   const e7d = eList.filter((e) => isInRange(e.created_at, 24 * 7));
 
   const totalPunishments = pList.length;
@@ -157,7 +191,7 @@ function buildModeratorCard(member, stats = {}) {
       `> Точность: **${weekAccuracy}%**`,
       ``,
 
-      `## ⏱️ За последние 24 часа`,
+      `## 📅 За сегодня`,
       `> Всего: **${d24Total}**  •  Муты: **${d24Mutes}**  •  Баны: **${d24Bans}**`,
       `> Досрочно снятых: **${d24Removed}**  •  Неверных: **${d24Wrong}**`,
       `> Мероприятий: **${events24h}**`,

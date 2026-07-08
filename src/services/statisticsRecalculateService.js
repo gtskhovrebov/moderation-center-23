@@ -1,5 +1,19 @@
 const supabase = require("../config/supabase");
 
+function isTodayMoscow(date) {
+  if (!date) return false;
+
+  const input = new Date(date);
+  const nowMoscow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
+  const inputMoscow = new Date(input.toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
+
+  return (
+    inputMoscow.getFullYear() === nowMoscow.getFullYear() &&
+    inputMoscow.getMonth() === nowMoscow.getMonth() &&
+    inputMoscow.getDate() === nowMoscow.getDate()
+  );
+}
+
 function isInRange(date, hours) {
   if (!date) return false;
   return new Date(date).getTime() >= Date.now() - hours * 60 * 60 * 1000;
@@ -24,7 +38,7 @@ async function recalculateModeratorStatistics(discordId) {
 
   const list = punishments || [];
 
-  const p24 = list.filter(p => isInRange(p.created_at, 24));
+  const p24 = list.filter(p => isTodayMoscow(p.created_at));
   const p7d = list.filter(p => isInRange(p.created_at, 24 * 7));
 
   const countType = (arr, type) =>

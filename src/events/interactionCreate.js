@@ -112,7 +112,7 @@ async function buildFreshStatsEmbed(user) {
     .setDescription([
       `👮 **${safe(user.displayName || user.username)}**`,
       ``,
-      `## 📅 За сегодня`,
+      `## ⏱️ За сегодня`,
       `Наказаний: **${stats.day}**`,
       `Мутов: **${stats.dayMutes}**`,
       `Банов: **${stats.dayBans}**`,

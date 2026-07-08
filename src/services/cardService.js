@@ -191,7 +191,7 @@ function buildModeratorCard(member, stats = {}) {
       `> Точность: **${weekAccuracy}%**`,
       ``,
 
-      `## 📅 За сегодня`,
+      `## ⏱️ За сегодня`,
       `> Всего: **${d24Total}**  •  Муты: **${d24Mutes}**  •  Баны: **${d24Bans}**`,
       `> Досрочно снятых: **${d24Removed}**  •  Неверных: **${d24Wrong}**`,
       `> Мероприятий: **${events24h}**`,

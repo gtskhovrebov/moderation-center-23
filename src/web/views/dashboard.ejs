@@ -1,219 +1,269 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Moderation Center 23</title>
-  <link rel="stylesheet" href="/styles.css">
+
+  <link rel="stylesheet" href="/styles.css" />
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 
 <body>
-<div class="bg1"></div>
-<div class="bg2"></div>
+  <div class="bg1"></div>
+  <div class="bg2"></div>
 
-<div class="container">
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brandIcon">MC</div>
+        <div>
+          <b>Moderation Center</b>
+          <span>Server 23</span>
+        </div>
+      </div>
 
-<header class="mainHeader">
-  <div>
-    <h1>Moderation Center 23</h1>
-    <p>Главная панель управления модерацией</p>
-  </div>
+      <nav class="sideNav">
+        <a class="active" href="/dashboard">📊 Dashboard</a>
+        <a href="/rewards">💰 Выплаты</a>
+      </nav>
+    </aside>
 
-  <div class="time">
-    Обновлено<br>
-    <b><%= updatedAt.toLocaleString("ru-RU") %></b>
-  </div>
-</header>
+    <section class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Grand Mobile 23</p>
+          <h1>Панель анализа модерации</h1>
+          <p class="subtitle">Статистика наказаний, мероприятий, качества и выплат.</p>
+        </div>
 
-<section class="cards">
-  <div class="card"><span>Всего наказаний</span><h2><%= totals.totalPunishments %></h2></div>
-  <div class="card"><span>За неделю</span><h2><%= totals.weekPunishments %></h2></div>
-  <div class="card"><span>За сутки</span><h2><%= totals.dayPunishments %></h2></div>
-  <div class="card red"><span>Ошибок</span><h2><%= totals.wrong %></h2></div>
-  <div class="card"><span>Мероприятий</span><h2><%= totals.events %></h2></div>
-  <div class="card green"><span>Донат недели</span><h2><%= totals.reward %> GC</h2></div>
-</section>
+        <div class="updatedBox">
+          <span>Обновлено</span>
+          <b><%= updatedAt.toLocaleString("ru-RU") %></b>
+        </div>
+      </header>
 
-<section class="charts">
-  <div class="panel" id="activity-panel">
-    <div class="panelHeader">
-      <h3>Активность модераторов</h3>
-      <p>Количество наказаний за неделю</p>
-    </div>
+      <section class="kpiGrid">
+        <div class="kpiCard">
+          <span>Всего наказаний</span>
+          <strong><%= totals.totalPunishments %></strong>
+        </div>
 
-    <div class="chartBox">
-      <canvas id="activityChart"></canvas>
-    </div>
-  </div>
+        <div class="kpiCard">
+          <span>За неделю</span>
+          <strong><%= totals.weekPunishments %></strong>
+        </div>
 
-  <div class="panel" id="reward-chart-panel">
-  <div class="panelHeader row">
-    <div>
-      <h3>Донат</h3>
-      <p>Распределение рекомендованных выплат</p>
-    </div>
+        <div class="kpiCard">
+          <span>За 24 часа</span>
+          <strong><%= totals.dayPunishments %></strong>
+        </div>
 
-    <button class="button" onclick="downloadBlock('reward-chart-panel', 'reward-chart.png')">
-      PNG доната
-    </button>
-  </div>
-      <h3>Донат</h3>
-      <p>Распределение рекомендованных выплат</p>
-    </div>
+        <div class="kpiCard danger">
+          <span>Ошибок</span>
+          <strong><%= totals.wrong %></strong>
+        </div>
 
-    <div class="chartBox small">
-      <canvas id="rewardChart"></canvas>
-    </div>
-  </div>
-</section>
+        <div class="kpiCard">
+          <span>Мероприятий</span>
+          <strong><%= totals.events %></strong>
+        </div>
 
-<section class="panel" id="moderators-panel">
-  <div class="panelHeader row">
-    <div>
-      <h3>Модераторы</h3>
-      <p>Нажми на строку, чтобы открыть карточку</p>
-    </div>
+        <div class="kpiCard success">
+          <span>Донат недели</span>
+          <strong><%= totals.reward %> GC</strong>
+        </div>
+      </section>
 
-    <div class="actions">
-  <button class="button" onclick="downloadBlock('activity-panel', 'activity-chart.png')">PNG активности</button>
-  <button class="button" onclick="downloadBlock('moderators-panel', 'moderators-table.png')">PNG таблицы</button>
-  <a href="/rewards" class="button">Выплаты</a>
-</div>
+      <section class="chartsGrid">
+        <div class="panel" id="activity-panel">
+          <div class="panelHead">
+            <div>
+              <h2>Активность модераторов</h2>
+              <p>Наказания + мероприятия за неделю</p>
+            </div>
 
-  <div class="tableWrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Модератор</th>
-          <th>24ч</th>
-          <th>Неделя</th>
-          <th>Всего</th>
-          <th>Ошибок</th>
-          <th>Мероприятий</th>
-          <th>Донат</th>
-        </tr>
-      </thead>
+            <button class="btn" onclick="downloadBlock('activity-panel', 'activity-chart.png')">
+              PNG
+            </button>
+          </div>
 
-      <tbody>
-        <% moderators.forEach(m => { %>
-          <tr onclick="location.href='/moderators/<%= m.discord_id %>'">
-            <td><b><%= m.display_name || m.username || m.discord_id %></b></td>
-            <td><%= m.punishments_24h || 0 %></td>
-            <td><%= m.punishments_7d || 0 %></td>
-            <td><%= m.total_punishments || 0 %></td>
-            <td class="<%= (m.wrong_punishments || 0) > 0 ? 'negative' : '' %>">
-              <%= m.wrong_punishments || 0 %>
-            </td>
-            <td><%= m.events_7d || 0 %></td>
-            <td><b><%= m.reward.finalReward %> GC</b></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</section>
+          <div class="chartBox">
+            <canvas id="activityChart"></canvas>
+          </div>
+        </div>
 
-</div>
+        <div class="panel" id="reward-chart-panel">
+          <div class="panelHead">
+            <div>
+              <h2>Донат недели</h2>
+              <p>Распределение выплат</p>
+            </div>
 
-<script id="moderators-data" type="application/json">
-  <%- JSON.stringify(moderators.slice(0, 10)) %>
-</script>
+            <button class="btn" onclick="downloadBlock('reward-chart-panel', 'reward-chart.png')">
+              PNG
+            </button>
+          </div>
 
-<script>
-const moderators = JSON.parse(
-  document.getElementById("moderators-data").textContent
-);
+          <div class="chartBox small">
+            <canvas id="rewardChart"></canvas>
+          </div>
+        </div>
+      </section>
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      labels: {
-        color: "#aeb7d4"
-      }
-    }
-  },
-  scales: {
-    x: {
-      ticks: { color: "#8d96ad" },
-      grid: { color: "rgba(255,255,255,.05)" }
-    },
-    y: {
-      ticks: { color: "#8d96ad" },
-      grid: { color: "rgba(255,255,255,.05)" }
-    }
-  }
-};
+      <section class="panel" id="moderators-panel">
+        <div class="panelHead">
+          <div>
+            <h2>Модераторы</h2>
+            <p>Нажми на строку, чтобы открыть карточку модератора</p>
+          </div>
 
-new Chart(document.getElementById("activityChart"), {
-  type: "bar",
-  data: {
-    labels: moderators.map(x => x.display_name || x.username || x.discord_id),
-    datasets: [{
-      label: "Активность: наказания + мероприятия",
-      data: moderators.map(x => (x.punishments_7d || 0) + (x.events_7d || 0)),
-      borderWidth: 1,
-      borderRadius: 10
-    }]
-  },
-  options: chartOptions
-});
+          <div class="actions">
+            <button class="btn" onclick="downloadBlock('moderators-panel', 'moderators-table.png')">
+              PNG таблицы
+            </button>
+            <a class="btn primary" href="/rewards">Выплаты</a>
+          </div>
+        </div>
 
-new Chart(document.getElementById("rewardChart"), {
-  type: "doughnut",
-  data: {
-    labels: moderators.map(x => x.display_name || x.username || x.discord_id),
-    datasets: [{
-      data: moderators.map(x => x.reward.finalReward || 0),
-      borderWidth: 2
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          color: "#aeb7d4",
-          padding: 16
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Модератор</th>
+                <th>24ч</th>
+                <th>Неделя</th>
+                <th>Всего</th>
+                <th>Ошибок</th>
+                <th>Мероприятий</th>
+                <th>Донат</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <% moderators.forEach(m => { %>
+                <tr onclick="location.href='/moderators/<%= m.discord_id %>'">
+                  <td>
+                    <div class="modCell">
+                      <b><%= m.display_name || m.username || m.discord_id %></b>
+                      <span><%= m.discord_id %></span>
+                    </div>
+                  </td>
+                  <td><%= m.punishments_24h || 0 %></td>
+                  <td><%= m.punishments_7d || 0 %></td>
+                  <td><%= m.total_punishments || 0 %></td>
+                  <td class="<%= (m.wrong_punishments || 0) > 0 ? 'negative' : '' %>">
+                    <%= m.wrong_punishments || 0 %>
+                  </td>
+                  <td><%= m.events_7d || 0 %></td>
+                  <td><b><%= m.reward.finalReward %> GC</b></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script id="moderators-data" type="application/json">
+    <%- JSON.stringify(moderators.slice(0, 10)) %>
+  </script>
+
+  <script>
+    const moderators = JSON.parse(
+      document.getElementById("moderators-data").textContent
+    );
+
+    const chartTextColor = "#aeb7d4";
+    const chartGridColor = "rgba(255,255,255,.06)";
+
+    new Chart(document.getElementById("activityChart"), {
+      type: "bar",
+      data: {
+        labels: moderators.map(x => x.display_name || x.username || x.discord_id),
+        datasets: [{
+          label: "Активность",
+          data: moderators.map(x => (x.punishments_7d || 0) + (x.events_7d || 0)),
+          borderWidth: 1,
+          borderRadius: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: chartTextColor }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: chartTextColor },
+            grid: { color: chartGridColor }
+          },
+          y: {
+            ticks: { color: chartTextColor },
+            grid: { color: chartGridColor }
+          }
         }
       }
+    });
+
+    new Chart(document.getElementById("rewardChart"), {
+      type: "doughnut",
+      data: {
+        labels: moderators.map(x => x.display_name || x.username || x.discord_id),
+        datasets: [{
+          data: moderators.map(x => x.reward.finalReward || 0),
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              color: chartTextColor,
+              padding: 14
+            }
+          }
+        }
+      }
+    });
+
+    async function downloadBlock(id, filename) {
+      const element = document.getElementById(id);
+
+      if (!element) {
+        alert("Блок не найден");
+        return;
+      }
+
+      element.classList.add("exportMode");
+
+      const canvas = await html2canvas(element, {
+        backgroundColor: "#080b13",
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      });
+
+      element.classList.remove("exportMode");
+
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
     }
-  }
-});
-</script>
-<script>
-async function downloadBlock(id, filename) {
-  const element = document.getElementById(id);
-
-  if (!element) {
-    alert("Блок не найден");
-    return;
-  }
-
-  element.classList.add("exportMode");
-
-  const canvas = await html2canvas(element, {
-    backgroundColor: "#080b13",
-    scale: 2,
-    useCORS: true,
-    scrollX: 0,
-    scrollY: 0,
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight
-  });
-
-  element.classList.remove("exportMode");
-
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
-</script>
+  </script>
 </body>
 </html>

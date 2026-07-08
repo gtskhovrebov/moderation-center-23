@@ -1,12 +1,200 @@
+const { EmbedBuilder, escapeMarkdown } = require("discord.js");
+
 const { handleHistoryInteraction } = require("../services/historyService");
 const { handleProofInteraction } = require("../services/proofService");
 const { handleDetailsInteraction } = require("../services/detailsService");
+const supabase = require("../config/supabase");
+
 const {
   searchPunishments,
   buildSearchEmbed,
   buildSearchButtons,
 } = require("../services/searchPunishmentService");
+
 const { buildStatsEmbed } = require("../services/statsService");
+
+function safe(value) {
+  return escapeMarkdown(String(value || "не найден"));
+}
+
+function isInRange(date, hours) {
+  if (!date) return false;
+  return new Date(date).getTime() >= Date.now() - hours * 60 * 60 * 1000;
+}
+
+function countType(list, type) {
+  return list.filter((p) => p.punishment_type === type).length;
+}
+
+function countWrong(list) {
+  return list.filter((p) => p.review_status === "wrong").length;
+}
+
+function accuracy(total, wrong) {
+  if (!total) return 100;
+  return Math.max(0, Math.round(((total - wrong) / total) * 100));
+}
+
+async function getFreshStats(discordId) {
+  const { data: punishments, error: pError } = await supabase
+    .from("punishments")
+    .select("*")
+    .eq("moderator_discord_id", discordId);
+
+  if (pError) throw pError;
+
+  const { data: events, error: eError } = await supabase
+    .from("moderator_events")
+    .select("*")
+    .eq("moderator_discord_id", discordId);
+
+  if (eError) throw eError;
+
+  const pList = punishments || [];
+  const eList = events || [];
+
+  const p24 = pList.filter((p) => isInRange(p.created_at, 24));
+  const p7 = pList.filter((p) => isInRange(p.created_at, 24 * 7));
+
+  const e24 = eList.filter((e) => isInRange(e.created_at, 24));
+  const e7 = eList.filter((e) => isInRange(e.created_at, 24 * 7));
+
+  return {
+    total: pList.length,
+    totalMutes: countType(pList, "mute"),
+    totalBans: countType(pList, "ban"),
+    totalWrong: countWrong(pList),
+
+    day: p24.length,
+    dayMutes: countType(p24, "mute"),
+    dayBans: countType(p24, "ban"),
+    dayWrong: countWrong(p24),
+
+    week: p7.length,
+    weekMutes: countType(p7, "mute"),
+    weekBans: countType(p7, "ban"),
+    weekWrong: countWrong(p7),
+
+    eventsTotal: eList.length,
+    events24: e24.length,
+    events7: e7.length,
+
+    withProofs: pList.filter((p) => Number(p.proof_count || 0) > 0).length,
+    withoutProofs: pList.filter((p) => Number(p.proof_count || 0) <= 0).length,
+  };
+}
+
+async function buildFreshStatsEmbed(user) {
+  const stats = await getFreshStats(user.id);
+
+  return new EmbedBuilder()
+    .setTitle("📊 Статистика модератора")
+    .setDescription([
+      `👮 **${safe(user.displayName || user.username)}**`,
+      ``,
+      `## ⏱️ За 24 часа`,
+      `Наказаний: **${stats.day}**`,
+      `Мутов: **${stats.dayMutes}**`,
+      `Банов: **${stats.dayBans}**`,
+      `Неверных: **${stats.dayWrong}**`,
+      `Мероприятий: **${stats.events24}**`,
+      `Точность: **${accuracy(stats.day, stats.dayWrong)}%**`,
+      ``,
+      `## 🗓️ За неделю`,
+      `Наказаний: **${stats.week}**`,
+      `Мутов: **${stats.weekMutes}**`,
+      `Банов: **${stats.weekBans}**`,
+      `Неверных: **${stats.weekWrong}**`,
+      `Мероприятий: **${stats.events7}**`,
+      `Точность: **${accuracy(stats.week, stats.weekWrong)}%**`,
+      ``,
+      `## 🏆 Всего`,
+      `Наказаний: **${stats.total}**`,
+      `Мутов: **${stats.totalMutes}**`,
+      `Банов: **${stats.totalBans}**`,
+      `Неверных: **${stats.totalWrong}**`,
+      `Мероприятий: **${stats.eventsTotal}**`,
+      `Точность: **${accuracy(stats.total, stats.totalWrong)}%**`,
+      ``,
+      `## 📎 Доказательства`,
+      `С доказательствами: **${stats.withProofs}**`,
+      `Без доказательств: **${stats.withoutProofs}**`,
+    ].join("\n"))
+    .setColor(0x5865f2)
+    .setTimestamp();
+}
+
+async function buildLeaderboardEmbed() {
+  const { data: moderators, error } = await supabase
+    .from("moderators")
+    .select("*")
+    .eq("is_active", true);
+
+  if (error) throw error;
+
+  const rows = [];
+
+  for (const moderator of moderators || []) {
+    const stats = await getFreshStats(moderator.discord_id);
+
+    rows.push({
+      name: moderator.display_name || moderator.username || moderator.discord_id,
+      activity: stats.week + stats.events7,
+      punishments: stats.week,
+      events: stats.events7,
+      accuracy: accuracy(stats.week, stats.weekWrong),
+    });
+  }
+
+  rows.sort((a, b) => b.activity - a.activity);
+
+  return new EmbedBuilder()
+    .setTitle("🏆 Рейтинг модераторов за неделю")
+    .setDescription(
+      rows.length
+        ? rows
+            .slice(0, 15)
+            .map((m, i) =>
+              `**${i + 1}. ${safe(m.name)}** — активность: **${m.activity}** | наказаний: **${m.punishments}** | мероприятий: **${m.events}** | точность: **${m.accuracy}%**`
+            )
+            .join("\n")
+        : "Данных пока нет."
+    )
+    .setColor(0xf1c40f)
+    .setTimestamp();
+}
+
+async function buildEventsEmbed(user) {
+  const { data, error } = await supabase
+    .from("moderator_events")
+    .select("*")
+    .eq("moderator_discord_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) throw error;
+
+  return new EmbedBuilder()
+    .setTitle("🎉 Мероприятия модератора")
+    .setDescription([
+      `👮 **${safe(user.displayName || user.username)}**`,
+      ``,
+      data?.length
+        ? data
+            .map((e, i) => {
+              const title = e.title || e.event_title || e.content || "Мероприятие";
+              const time = e.created_at
+                ? `<t:${Math.floor(new Date(e.created_at).getTime() / 1000)}:f>`
+                : "дата не найдена";
+
+              return `**${i + 1}.** ${safe(title).slice(0, 160)}\n${time}`;
+            })
+            .join("\n\n")
+        : "Мероприятий пока нет.",
+    ].join("\n"))
+    .setColor(0x2ecc71)
+    .setTimestamp();
+}
 
 async function handleSlashCommand(interaction) {
   const command = interaction.commandName;
@@ -18,9 +206,7 @@ async function handleSlashCommand(interaction) {
     const { data, error } = await searchPunishments(query);
 
     if (error) {
-      await interaction.editReply({
-        content: `❌ Ошибка поиска: ${error.message}`,
-      });
+      await interaction.editReply({ content: `❌ Ошибка поиска: ${error.message}` });
       return;
     }
 
@@ -39,18 +225,9 @@ async function handleSlashCommand(interaction) {
         ? interaction.options.getUser("модератор") || interaction.user
         : interaction.user;
 
-    const embed = await buildStatsEmbed(target);
+    const embed = await buildFreshStatsEmbed(target);
 
-    if (!embed) {
-      await interaction.editReply({
-        content: "❌ Статистика не найдена.",
-      });
-      return;
-    }
-
-    await interaction.editReply({
-      embeds: [embed],
-    });
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 
@@ -59,6 +236,25 @@ async function handleSlashCommand(interaction) {
 
     interaction.customId = `moderator_history:${target.id}`;
     await handleHistoryInteraction(interaction);
+    return;
+  }
+
+  if (command === "leaderboard") {
+    await interaction.deferReply({ ephemeral: true });
+
+    const embed = await buildLeaderboardEmbed();
+
+    await interaction.editReply({ embeds: [embed] });
+    return;
+  }
+
+  if (command === "events") {
+    await interaction.deferReply({ ephemeral: true });
+
+    const target = interaction.options.getUser("модератор") || interaction.user;
+    const embed = await buildEventsEmbed(target);
+
+    await interaction.editReply({ embeds: [embed] });
     return;
   }
 

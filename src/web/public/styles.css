@@ -301,9 +301,15 @@ h1 {
 
 .chartBox {
   position: relative;
-  height: 330px;
+  height: 430px;
   width: 100%;
-  padding: 20px 22px 24px;
+  padding: 26px 28px 32px;
+}
+
+.chartBox.small {
+  height: 430px;
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .chartBox.small {
@@ -637,4 +643,15 @@ header {
   .cards {
     grid-template-columns: 1fr;
   }
+}
+
+#activity-panel.exportMode,
+#reward-chart-panel.exportMode {
+  width: 1200px;
+  min-height: 680px;
+}
+
+#activity-panel.exportMode .chartBox,
+#reward-chart-panel.exportMode .chartBox {
+  height: 430px;
 }

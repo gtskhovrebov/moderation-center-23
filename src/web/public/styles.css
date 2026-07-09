@@ -439,3 +439,202 @@ tbody tr:hover {
     height: 300px;
   }
 }
+.container {
+  width: min(1480px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 28px 0 60px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.back {
+  display: inline-flex;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.donateBig {
+  min-width: 220px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+}
+
+.donateBig span {
+  color: var(--muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.donateBig b {
+  font-size: 28px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.card {
+  min-height: 120px;
+  padding: 20px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(26,31,45,.94), rgba(15,19,30,.94));
+  border: 1px solid var(--border);
+}
+
+.card span {
+  color: var(--muted);
+}
+
+.card h2 {
+  margin: 18px 0 0;
+  font-size: 30px;
+}
+
+.card.green {
+  border-color: rgba(46, 204, 113, .35);
+}
+
+.card.red {
+  border-color: rgba(255, 107, 122, .35);
+}
+
+.button {
+  border: 0;
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.075);
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.panelHeader {
+  padding: 22px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.075);
+}
+
+.panelHeader.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.rewardCards {
+  padding: 16px;
+}
+
+.rewardRow {
+  display: grid;
+  grid-template-columns: 70px 1fr auto 90px;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.045);
+  margin-bottom: 10px;
+}
+
+.rewardRow.top {
+  border-color: rgba(46, 204, 113, .35);
+}
+
+.rewardRow.risk {
+  border-color: rgba(255, 107, 122, .35);
+}
+
+.rewardPerson {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rewardPerson span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.rewardAmount {
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.badge.good,
+.badge.normal {
+  background: rgba(46, 204, 113, .15);
+  color: #7dffb0;
+}
+
+.badge.danger {
+  background: rgba(255, 107, 122, .15);
+  color: #ff8d99;
+}
+
+.rewardList,
+.activityList {
+  padding: 22px 24px;
+}
+
+.rewardList p {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.activityItem {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.activityItem span {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.empty {
+  color: var(--muted);
+  padding: 20px 0;
+}
+
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rewardRow {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

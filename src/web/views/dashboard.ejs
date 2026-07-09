@@ -237,33 +237,33 @@
       }
     });
 
-    async function downloadBlock(id, filename) {
-      const element = document.getElementById(id);
+   async function downloadBlock(id, filename) {
+  const element = document.getElementById(id);
 
-      if (!element) {
-        alert("Блок не найден");
-        return;
-      }
+  if (!element) {
+    alert("Блок не найден");
+    return;
+  }
 
-      element.classList.add("exportMode");
+  try {
+    element.classList.add("exportMode");
 
-      const canvas = await html2canvas(element, {
-        backgroundColor: "#080b13",
-        scale: 2,
-        useCORS: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
-      });
+    const canvas = await html2canvas(element, {
+      backgroundColor: "#080b13",
+      scale: 2,
+      useCORS: true
+    });
 
-      element.classList.remove("exportMode");
-
-      const link = document.createElement("a");
-      link.download = filename;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    }
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  } catch (error) {
+    alert("Ошибка сохранения PNG: " + error.message);
+  } finally {
+    element.classList.remove("exportMode");
+  }
+}
   </script>
 </body>
 </html>

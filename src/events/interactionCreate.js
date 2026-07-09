@@ -185,17 +185,20 @@ async function buildLeaderboardEmbed() {
 }
 
 async function buildEventsEmbed(user) {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
   const { data, error } = await supabase
-    .from("moderator_events")
-    .select("*")
-    .eq("moderator_discord_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  .from("moderator_events")
+  .select("*")
+  .eq("moderator_discord_id", user.id)
+  .gte("created_at", weekAgo)
+  .order("created_at", { ascending: false })
+  .limit(10);
 
   if (error) throw error;
 
   return new EmbedBuilder()
-    .setTitle("🎉 Мероприятия модератора")
+    .setTitle("🎉 Мероприятия модератора за неделю")
     .setDescription([
       `👮 **${safe(user.displayName || user.username)}**`,
       ``,

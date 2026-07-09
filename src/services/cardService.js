@@ -20,11 +20,9 @@ function isTodayMoscow(date) {
   if (!date) return false;
 
   const input = new Date(date);
-
   const nowMoscow = new Date(
     new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" })
   );
-
   const inputMoscow = new Date(
     input.toLocaleString("en-US", { timeZone: "Europe/Moscow" })
   );
@@ -36,23 +34,28 @@ function isTodayMoscow(date) {
   );
 }
 
-function isTodayMoscow(date) {
+function isThisWeekMoscow(date) {
   if (!date) return false;
 
-  const input = new Date(date);
-  const nowMoscow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
-  const inputMoscow = new Date(input.toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
-
-  return (
-    inputMoscow.getFullYear() === nowMoscow.getFullYear() &&
-    inputMoscow.getMonth() === nowMoscow.getMonth() &&
-    inputMoscow.getDate() === nowMoscow.getDate()
+  const nowMoscow = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" })
   );
-}
 
-function isInRange(date, hours) {
-  if (!date) return false;
-  return new Date(date).getTime() >= Date.now() - hours * 60 * 60 * 1000;
+  const day = nowMoscow.getDay();
+  const diffToMonday = day === 0 ? 6 : day - 1;
+
+  const monday = new Date(nowMoscow);
+  monday.setDate(nowMoscow.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(monday.getDate() + 7);
+
+  const inputMoscow = new Date(
+    new Date(date).toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  return inputMoscow >= monday && inputMoscow < nextMonday;
 }
 
 function countType(list, type) {
@@ -99,10 +102,10 @@ async function getModeratorStats(discordId) {
   const eList = events || [];
 
   const p24 = pList.filter((p) => isTodayMoscow(p.created_at));
-  const p7d = pList.filter((p) => isInRange(p.created_at, 24 * 7));
+  const p7d = pList.filter((p) => isThisWeekMoscow(p.created_at));
 
   const e24 = eList.filter((e) => isTodayMoscow(e.created_at));
-  const e7d = eList.filter((e) => isInRange(e.created_at, 24 * 7));
+  const e7d = eList.filter((e) => isThisWeekMoscow(e.created_at));
 
   const totalPunishments = pList.length;
   const wrongPunishments = countWrong(pList);

@@ -4,8 +4,12 @@ function isTodayMoscow(date) {
   if (!date) return false;
 
   const input = new Date(date);
-  const nowMoscow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
-  const inputMoscow = new Date(input.toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
+  const nowMoscow = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+  const inputMoscow = new Date(
+    input.toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
 
   return (
     inputMoscow.getFullYear() === nowMoscow.getFullYear() &&
@@ -14,9 +18,28 @@ function isTodayMoscow(date) {
   );
 }
 
-function isInRange(date, hours) {
+function isThisWeekMoscow(date) {
   if (!date) return false;
-  return new Date(date).getTime() >= Date.now() - hours * 60 * 60 * 1000;
+
+  const nowMoscow = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  const day = nowMoscow.getDay();
+  const diffToMonday = day === 0 ? 6 : day - 1;
+
+  const monday = new Date(nowMoscow);
+  monday.setDate(nowMoscow.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(monday.getDate() + 7);
+
+  const inputMoscow = new Date(
+    new Date(date).toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  return inputMoscow >= monday && inputMoscow < nextMonday;
 }
 
 function accuracy(total, wrong) {
@@ -38,20 +61,20 @@ async function recalculateModeratorStatistics(discordId) {
 
   const list = punishments || [];
 
-  const p24 = list.filter(p => isTodayMoscow(p.created_at));
-  const p7d = list.filter(p => isInRange(p.created_at, 24 * 7));
+  const p24 = list.filter((p) => isTodayMoscow(p.created_at));
+  const p7d = list.filter((p) => isThisWeekMoscow(p.created_at));
 
   const countType = (arr, type) =>
-    arr.filter(p => p.punishment_type === type).length;
+    arr.filter((p) => p.punishment_type === type).length;
 
-  const countWrong = arr =>
-    arr.filter(p => p.review_status === "wrong").length;
+  const countWrong = (arr) =>
+    arr.filter((p) => p.review_status === "wrong").length;
 
-  const countRemoved = arr =>
-    arr.filter(p => p.removed || p.review_status === "removed").length;
+  const countRemoved = (arr) =>
+    arr.filter((p) => p.removed || p.review_status === "removed").length;
 
-  const withProofs = list.filter(p => Number(p.proof_count || 0) > 0).length;
-  const withoutProofs = list.filter(p => Number(p.proof_count || 0) <= 0).length;
+  const withProofs = list.filter((p) => Number(p.proof_count || 0) > 0).length;
+  const withoutProofs = list.filter((p) => Number(p.proof_count || 0) <= 0).length;
 
   const { data: moderator } = await supabase
     .from("moderators")
@@ -91,8 +114,6 @@ async function recalculateModeratorStatistics(discordId) {
     without_proofs: withoutProofs,
 
     accuracy: accuracy(totalPunishments, wrongPunishments),
-
-    updated_at: new Date().toISOString(),
   };
 
   const { error: upsertError } = await supabase

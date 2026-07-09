@@ -37,6 +37,30 @@ function isTodayMoscow(date) {
   );
 }
 
+function isThisWeekMoscow(date) {
+  if (!date) return false;
+
+  const nowMoscow = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  const day = nowMoscow.getDay();
+  const diffToMonday = day === 0 ? 6 : day - 1;
+
+  const monday = new Date(nowMoscow);
+  monday.setDate(nowMoscow.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(monday.getDate() + 7);
+
+  const inputMoscow = new Date(
+    new Date(date).toLocaleString("en-US", { timeZone: "Europe/Moscow" })
+  );
+
+  return inputMoscow >= monday && inputMoscow < nextMonday;
+}
+
 function isInRange(date, hours) {
   if (!date) return false;
   return new Date(date).getTime() >= Date.now() - hours * 60 * 60 * 1000;
@@ -74,10 +98,10 @@ async function getFreshStats(discordId) {
   const eList = events || [];
 
   const p24 = pList.filter((p) => isTodayMoscow(p.created_at));
-  const p7 = pList.filter((p) => isInRange(p.created_at, 24 * 7));
+  const p7 = pList.filter((p) => isThisWeekMoscow(p.created_at));
 
   const e24 = eList.filter((e) => isTodayMoscow(e.created_at));
-  const e7 = eList.filter((e) => isInRange(e.created_at, 24 * 7));
+  const e7 = eList.filter((e) => isThisWeekMoscow(e.created_at));
 
   return {
     total: pList.length,
@@ -185,45 +209,54 @@ async function buildLeaderboardEmbed() {
 }
 
 async function buildEventsEmbed(user) {
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const { data, error } = await supabase
-  .from("moderator_events")
-  .select("*")
-  .eq("moderator_discord_id", user.id)
-  .gte("created_at", weekAgo)
-  .order("created_at", { ascending: false })
-  .limit(10);
+  const { data: allEvents, error } = await supabase
+    .from("moderator_events")
+    .select("*")
+    .eq("moderator_discord_id", user.id)
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
 
+  const data = (allEvents || [])
+    .filter((e) => isThisWeekMoscow(e.created_at))
+    .slice(0, 10);
+
   return new EmbedBuilder()
-    .setTitle("🎉 Мероприятия модератора за неделю")
+    .setTitle("🎉 Мероприятия модератора за текущую неделю")
     .setDescription([
       `👮 **${safe(user.displayName || user.username)}**`,
       ``,
-      data?.length
+      data.length
         ? data
             .map((e, i) => {
-              const title = e.title || e.event_title || e.content || "Мероприятие";
+              const title =
+                e.title ||
+                e.event_title ||
+                e.content ||
+                e.event_description ||
+                "Мероприятие";
+
               const time = e.created_at
                 ? `<t:${Math.floor(new Date(e.created_at).getTime() / 1000)}:f>`
                 : "дата не найдена";
 
               const url = e.event_message_url || e.event_url || e.url || null;
 
-return [
-  `**${i + 1}.** ${safe(title).slice(0, 160)}`,
-  `${time}`,
-  url ? `🔗 [Перейти к мероприятию](${url})` : `🔗 Ссылка не найдена`,
-].join("\n");
+              return [
+                `**${i + 1}.** ${safe(title).slice(0, 160)}`,
+                `${time}`,
+                url ? `🔗 [Перейти к мероприятию](${url})` : `🔗 Ссылка не найдена`,
+              ].join("\n");
             })
             .join("\n\n")
-        : "Мероприятий пока нет.",
+        : "Мероприятий за текущую неделю пока нет.",
     ].join("\n"))
     .setColor(0x2ecc71)
+    .setFooter({ text: `Показано: ${data.length} из ${(allEvents || []).filter((e) => isThisWeekMoscow(e.created_at)).length} за неделю` })
     .setTimestamp();
 }
+
+
 
 async function handleSlashCommand(interaction) {
   const command = interaction.commandName;

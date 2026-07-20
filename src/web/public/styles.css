@@ -655,3 +655,234 @@ header {
 #reward-chart-panel.exportMode .chartBox {
   height: 430px;
 }
+
+.periodPanel {
+  padding: 18px;
+  margin-bottom: 18px;
+  overflow: visible;
+}
+
+.periodPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.periodButton {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 13px;
+  font-weight: 850;
+  display: inline-flex;
+  align-items: center;
+  transition: 0.18s ease;
+}
+
+.periodButton:hover {
+  color: white;
+  border-color: rgba(127, 140, 255, 0.5);
+  background: rgba(88, 101, 242, 0.12);
+}
+
+.periodButton.active {
+  color: white;
+  border-color: rgba(127, 140, 255, 0.75);
+  background: linear-gradient(
+    135deg,
+    rgba(88, 101, 242, 0.34),
+    rgba(139, 92, 246, 0.25)
+  );
+}
+
+.dateForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+.dateForm + .dateForm {
+  margin-top: 14px;
+}
+
+.dateForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dateForm label span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dateForm input {
+  min-height: 42px;
+  padding: 0 13px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  color: white;
+  color-scheme: dark;
+  background: rgba(255, 255, 255, 0.055);
+  font: inherit;
+}
+
+.updatedBox small {
+  display: block;
+  margin-top: 9px;
+  color: var(--muted2);
+  line-height: 1.35;
+}
+
+.kpiGrid.detailed {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.kpiCard small {
+  display: block;
+  margin-top: 14px;
+  color: var(--muted2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.kpiCard.warning {
+  border-color: rgba(241, 196, 15, 0.35);
+}
+
+.compactNumber {
+  font-size: 20px !important;
+  line-height: 1.25;
+}
+
+.wideCharts {
+  grid-template-columns: minmax(0, 1.55fr) minmax(350px, 0.45fr);
+}
+
+.chartBox.large {
+  height: 470px;
+}
+
+.placeCell {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.warningText {
+  color: #ffd166;
+  font-weight: 900;
+}
+
+.emptyTable {
+  padding: 34px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.exportMode {
+  background: #0c101c !important;
+}
+
+.exportMode .panelHead {
+  padding-top: 26px;
+}
+
+#timeline-panel.exportMode,
+#types-panel.exportMode,
+#hours-panel.exportMode,
+#weekdays-panel.exportMode {
+  width: 1200px;
+  min-height: 680px;
+}
+
+#timeline-panel.exportMode .chartBox,
+#types-panel.exportMode .chartBox,
+#hours-panel.exportMode .chartBox,
+#weekdays-panel.exportMode .chartBox {
+  height: 500px;
+}
+
+@media (max-width: 1350px) {
+  .kpiGrid.detailed {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .wideCharts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .kpiGrid.detailed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dateForm {
+    align-items: stretch;
+  }
+
+  .dateForm label,
+  .dateForm input,
+  .dateForm .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .kpiGrid.detailed {
+    grid-template-columns: 1fr;
+  }
+
+  .periodButton {
+    flex: 1 1 calc(50% - 9px);
+    justify-content: center;
+    text-align: center;
+  }
+
+  .chartBox,
+  .chartBox.large,
+  .chartBox.small {
+    height: 330px;
+    padding: 18px 14px 24px;
+  }
+
+  .content {
+    padding: 14px;
+  }
+
+  h1 {
+    font-size: 30px;
+    line-height: 1.08;
+  }
+}
+.period-selector {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.period-selector a {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: #2b2f42;
+    color: #fff;
+    text-decoration: none;
+    transition: .2s;
+}
+
+.period-selector a:hover {
+    background: #5865F2;
+}
+
+.period-selector a.active {
+    background: #5865F2;
+}

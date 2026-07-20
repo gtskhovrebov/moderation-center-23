@@ -6,9 +6,50 @@
   <title><%= moderator.display_name || moderator.username || moderator.discord_id %></title>
   <link rel="stylesheet" href="/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+
+<meta name="theme-color" content="#5865F2">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+<meta name="theme-color" content="#5865F2">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="MC23">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
 
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js");
+}
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch((error) =>
+          console.error("Service Worker registration failed:", error)
+        );
+    });
+  }
+</script>
+
 <body>
+  
 
 <div class="bg1"></div>
 <div class="bg2"></div>

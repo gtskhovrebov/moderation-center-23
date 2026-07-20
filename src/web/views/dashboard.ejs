@@ -1,16 +1,56 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Moderation Center 23</title>
 
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles.css">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+
+<meta name="theme-color" content="#5865F2">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+<meta name="theme-color" content="#5865F2">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="MC23">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
+
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js");
+}
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch((error) =>
+          console.error("Service Worker registration failed:", error)
+        );
+    });
+  }
+</script>
 
 <body>
   <div class="bg1"></div>
@@ -20,6 +60,7 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brandIcon">MC</div>
+
         <div>
           <b>Moderation Center</b>
           <span>Server 23</span>
@@ -27,105 +68,260 @@
       </div>
 
       <nav class="sideNav">
-        <a class="active" href="/dashboard">📊 Dashboard</a>
-        <a href="/rewards">💰 Выплаты</a>
+        <a class="active" href="/dashboard">📊 Главная</a>
+        <a href="#time-analytics">⏱️ Аналитика времени</a>
+        <a href="#moderators-panel">👮 Модераторы</a>
+        <a href="/rewards?period=<%= period %>&date=<%= range.dateValue %><%= period === 'custom' ? `&from=${range.fromValue}&to=${range.toValue}` : '' %>">💰 Выплаты</a>
       </nav>
     </aside>
 
     <section class="content">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Grand Mobile 23</p>
+          <p class="eyebrow">Grand Mobile · Server 23</p>
           <h1>Панель анализа модерации</h1>
-          <p class="subtitle">Статистика наказаний, мероприятий, качества и выплат.</p>
+
+          <p class="subtitle">
+            Подробная статистика наказаний, мероприятий и качества работы.
+          </p>
         </div>
 
         <div class="updatedBox">
-          <span>Обновлено</span>
-          <b><%= updatedAt.toLocaleString("ru-RU") %></b>
+          <span>Выбранный период</span>
+          <b><%= range.title %></b>
+
+          <small>
+            Обновлено:
+            <%= updatedAt.toLocaleString("ru-RU", {
+              timeZone: "Europe/Moscow"
+            }) %>
+          </small>
         </div>
       </header>
 
-      <section class="kpiGrid">
-        <div class="kpiCard">
-          <span>Всего наказаний</span>
-          <strong><%= totals.totalPunishments %></strong>
+      <section class="periodPanel panel">
+        <div class="periodPresets">
+          <% [
+            "day",
+            "yesterday",
+            "week",
+            "previous_week",
+            "month",
+            "previous_month",
+            "year",
+            "all"
+          ].forEach(key => { %>
+            <a
+              href="/dashboard?period=<%= key %>&date=<%= range.dateValue %>"
+              class="periodButton <%= period === key ? 'active' : '' %>"
+            >
+              <%= periodLabels[key] %>
+            </a>
+          <% }) %>
         </div>
 
-        <div class="kpiCard">
-          <span>За неделю</span>
-          <strong><%= totals.weekPunishments %></strong>
-        </div>
+        <form class="dateForm" method="GET" action="/dashboard">
+          <input type="hidden" name="period" value="day">
 
-        <div class="kpiCard">
-          <span>За сегодня</span>
-          <strong><%= totals.dayPunishments %></strong>
-        </div>
+          <label>
+            <span>Конкретный день</span>
+            <input type="date" name="date" value="<%= range.dateValue %>">
+          </label>
 
-        <div class="kpiCard danger">
-          <span>Ошибок</span>
-          <strong><%= totals.wrong %></strong>
-        </div>
+          <button class="btn primary" type="submit">Открыть день</button>
+        </form>
 
-        <div class="kpiCard">
-          <span>Мероприятий</span>
-          <strong><%= totals.events %></strong>
-        </div>
+        <form class="dateForm customRange" method="GET" action="/dashboard">
+          <input type="hidden" name="period" value="custom">
 
-        <div class="kpiCard success">
-          <span>Донат недели</span>
-          <strong><%= totals.reward %> GC</strong>
-        </div>
+          <label>
+            <span>Начало</span>
+            <input
+              type="date"
+              name="from"
+              value="<%= range.fromValue || '' %>"
+              required
+            >
+          </label>
+
+          <label>
+            <span>Конец</span>
+            <input
+              type="date"
+              name="to"
+              value="<%= range.toValue || '' %>"
+              required
+            >
+          </label>
+
+          <button class="btn" type="submit">Применить диапазон</button>
+        </form>
       </section>
 
-      <section class="chartsGrid">
-        <div class="panel" id="activity-panel">
+      <section class="kpiGrid detailed">
+        <article class="kpiCard">
+          <span>Всего наказаний</span>
+          <strong><%= summary.totalPunishments %></strong>
+          <small>
+            <%= comparison.totalPunishments === null
+              ? "Нет данных для сравнения"
+              : `${comparison.totalPunishments >= 0 ? "+" : ""}${comparison.totalPunishments}% к прошлому периоду`
+            %>
+          </small>
+        </article>
+
+        <article class="kpiCard">
+          <span>Мутов</span>
+          <strong><%= summary.mutes %></strong>
+          <small>За выбранный период</small>
+        </article>
+
+        <article class="kpiCard">
+          <span>Банов</span>
+          <strong><%= summary.bans %></strong>
+          <small>
+            Временных: <%= summary.temporaryBans %> ·
+            постоянных: <%= summary.permanentBans %>
+          </small>
+        </article>
+
+        <article class="kpiCard danger">
+          <span>Ошибок</span>
+          <strong><%= summary.wrong %></strong>
+          <small>
+            <%= comparison.wrong === null
+              ? "Нет базы сравнения"
+              : `${comparison.wrong >= 0 ? "+" : ""}${comparison.wrong}%`
+            %>
+          </small>
+        </article>
+
+        <article class="kpiCard warning">
+          <span>Досрочно снято</span>
+          <strong><%= summary.removed %></strong>
+          <small>В выбранном периоде</small>
+        </article>
+
+        <article class="kpiCard success">
+          <span>Точность</span>
+          <strong><%= summary.accuracy %>%</strong>
+          <small>
+            <%= comparison.accuracyDifference >= 0 ? "+" : "" %><%= comparison.accuracyDifference %> п.п.
+          </small>
+        </article>
+
+        <article class="kpiCard">
+          <span>Мероприятий</span>
+          <strong><%= summary.events %></strong>
+          <small>За выбранный период</small>
+        </article>
+
+        <article class="kpiCard">
+          <span>Активных модераторов</span>
+          <strong><%= summary.activeModerators %></strong>
+          <small>С наказаниями или мероприятиями</small>
+        </article>
+
+        <article class="kpiCard">
+          <span>С доказательствами</span>
+          <strong><%= summary.withProofs %></strong>
+          <small>Без доказательств: <%= summary.withoutProofs %></small>
+        </article>
+
+        <article class="kpiCard">
+          <span>Среднее на модератора</span>
+          <strong><%= summary.averagePunishmentsPerActiveModerator %></strong>
+          <small>
+            Мероприятий: <%= summary.averageEventsPerActiveModerator %>
+          </small>
+        </article>
+      </section>
+
+      <section class="chartsGrid wideCharts">
+        <article class="panel" id="timeline-panel">
           <div class="panelHead">
             <div>
-              <h2>Активность модераторов</h2>
-              <p>Наказания + мероприятия за неделю</p>
+              <h2>Динамика активности</h2>
+              <p>Наказания и мероприятия по календарным датам</p>
             </div>
 
-            <button class="btn" onclick="downloadBlock('activity-panel', 'activity-chart.png')">
+            <button class="btn" onclick="downloadBlock('timeline-panel', 'timeline.png')">
               PNG
             </button>
           </div>
 
-          <div class="chartBox">
-            <canvas id="activityChart"></canvas>
+          <div class="chartBox large">
+            <canvas id="timelineChart"></canvas>
           </div>
-        </div>
+        </article>
 
-        <div class="panel" id="reward-chart-panel">
+        <article class="panel" id="types-panel">
           <div class="panelHead">
             <div>
-              <h2>Донат недели</h2>
-              <p>Распределение выплат</p>
+              <h2>Структура наказаний</h2>
+              <p>Соотношение мутов и банов</p>
             </div>
 
-            <button class="btn" onclick="downloadBlock('reward-chart-panel', 'reward-chart.png')">
+            <button class="btn" onclick="downloadBlock('types-panel', 'punishment-types.png')">
               PNG
             </button>
           </div>
 
           <div class="chartBox small">
-            <canvas id="rewardChart"></canvas>
+            <canvas id="typesChart"></canvas>
           </div>
-        </div>
+        </article>
+      </section>
+
+      <section class="chartsGrid" id="time-analytics">
+        <article class="panel" id="hours-panel">
+          <div class="panelHead">
+            <div>
+              <h2>Активность по часам</h2>
+              <p>Время указано по Москве</p>
+            </div>
+          </div>
+
+          <div class="chartBox">
+            <canvas id="hoursChart"></canvas>
+          </div>
+        </article>
+
+        <article class="panel" id="weekdays-panel">
+          <div class="panelHead">
+            <div>
+              <h2>Дни недели</h2>
+              <p>Наказания и мероприятия</p>
+            </div>
+          </div>
+
+          <div class="chartBox">
+            <canvas id="weekdaysChart"></canvas>
+          </div>
+        </article>
       </section>
 
       <section class="panel" id="moderators-panel">
         <div class="panelHead">
           <div>
-            <h2>Модераторы</h2>
-            <p>Нажми на строку, чтобы открыть карточку модератора</p>
+            <h2>Рейтинг модераторов</h2>
+            <p>
+              Все показатели относятся к периоду:
+              <b><%= range.title %></b>
+            </p>
           </div>
 
           <div class="actions">
-            <button class="btn" onclick="downloadBlock('moderators-panel', 'moderators-table.png')">
+            <button class="btn" onclick="downloadBlock('moderators-panel', 'moderators-rating.png')">
               PNG таблицы
             </button>
-            <a class="btn primary" href="/rewards">Выплаты</a>
+
+            <a
+              class="btn primary"
+              href="/rewards?period=<%= period %>&date=<%= range.dateValue %><%= period === 'custom' ? `&from=${range.fromValue}&to=${range.toValue}` : '' %>"
+            >
+              Выплаты за период
+            </a>
           </div>
         </div>
 
@@ -133,35 +329,62 @@
           <table>
             <thead>
               <tr>
+                <th>#</th>
                 <th>Модератор</th>
-                <th>Сегодня</th>
-                <th>Неделя</th>
-                <th>Всего</th>
-                <th>Ошибок</th>
-                <th>Мероприятий</th>
-                <th>Донат</th>
+                <th>Наказания</th>
+                <th>Муты</th>
+                <th>Баны</th>
+                <th>Ошибки</th>
+                <th>Снятые</th>
+                <th>Мероприятия</th>
+                <th>Точность</th>
+                <th>Активность</th>
               </tr>
             </thead>
 
             <tbody>
-              <% moderators.forEach(m => { %>
-                <tr onclick="location.href='/moderators/<%= m.discord_id %>'">
+              <% moderators.forEach((moderator, index) => { %>
+                <tr
+                  onclick="location.href='/moderators/<%= moderator.discord_id %>?period=<%= period %>&date=<%= range.dateValue %><%= period === 'custom' ? `&from=${range.fromValue}&to=${range.toValue}` : '' %>'"
+                >
+                  <td class="placeCell"><%= index + 1 %></td>
+
                   <td>
                     <div class="modCell">
-                      <b><%= m.display_name || m.username || m.discord_id %></b>
-                      <span><%= m.discord_id %></span>
+                      <b>
+                        <%= moderator.display_name ||
+                            moderator.username ||
+                            moderator.discord_id %>
+                      </b>
+                      <span><%= moderator.discord_id %></span>
                     </div>
                   </td>
-                  <td><%= m.punishments_24h || 0 %></td>
-                  <td><%= m.punishments_7d || 0 %></td>
-                  <td><%= m.total_punishments || 0 %></td>
-                  <td class="<%= (m.wrong_punishments || 0) > 0 ? 'negative' : '' %>">
-                    <%= m.wrong_punishments || 0 %>
+
+                  <td><b><%= moderator.totalPunishments %></b></td>
+                  <td><%= moderator.mutes %></td>
+                  <td><%= moderator.bans %></td>
+
+                  <td class="<%= moderator.wrong > 0 ? 'negative' : '' %>">
+                    <%= moderator.wrong %>
                   </td>
-                  <td><%= m.events_7d || 0 %></td>
-                  <td><b><%= m.reward.finalReward %> GC</b></td>
+
+                  <td class="<%= moderator.removed > 0 ? 'warningText' : '' %>">
+                    <%= moderator.removed %>
+                  </td>
+
+                  <td><%= moderator.events %></td>
+                  <td><%= moderator.accuracy %>%</td>
+                  <td><b><%= moderator.activity %></b></td>
                 </tr>
               <% }) %>
+
+              <% if (!moderators.length) { %>
+                <tr>
+                  <td colspan="10" class="emptyTable">
+                    Данных за выбранный период нет.
+                  </td>
+                </tr>
+              <% } %>
             </tbody>
           </table>
         </div>
@@ -169,101 +392,249 @@
     </section>
   </main>
 
-  <script id="moderators-data" type="application/json">
-    <%- JSON.stringify(moderators.slice(0, 10)) %>
+  <script id="dashboard-data" type="application/json">
+    <%- JSON.stringify({
+      timeline,
+      hourly,
+      weekdays,
+      summary
+    }).replace(/</g, "\\u003c") %>
   </script>
 
   <script>
-    const moderators = JSON.parse(
-      document.getElementById("moderators-data").textContent
+    const dashboardData = JSON.parse(
+      document.getElementById("dashboard-data").textContent
     );
 
-    const chartTextColor = "#aeb7d4";
-    const chartGridColor = "rgba(255,255,255,.06)";
+    Chart.defaults.color = "#aeb7d4";
+    Chart.defaults.borderColor = "rgba(255,255,255,.06)";
+    Chart.defaults.font.family =
+      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-    new Chart(document.getElementById("activityChart"), {
-      type: "bar",
-      data: {
-        labels: moderators.map(x => x.display_name || x.username || x.discord_id),
-        datasets: [{
-          label: "Активность",
-          data: moderators.map(x => (x.punishments_7d || 0) + (x.events_7d || 0)),
-          borderWidth: 1,
-          borderRadius: 10
-        }]
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 650
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: chartTextColor }
+      plugins: {
+        legend: {
+          labels: {
+            color: "#c6cdea",
+            padding: 18,
+            usePointStyle: true
           }
         },
-        scales: {
-          x: {
-            ticks: { color: chartTextColor },
-            grid: { color: chartGridColor }
+        tooltip: {
+          backgroundColor: "#111827",
+          titleColor: "#ffffff",
+          bodyColor: "#dbe3ff",
+          borderColor: "rgba(255,255,255,.12)",
+          borderWidth: 1,
+          padding: 12
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#9aa3ba",
+            maxRotation: 45,
+            minRotation: 0
           },
-          y: {
-            ticks: { color: chartTextColor },
-            grid: { color: chartGridColor }
+          grid: {
+            color: "rgba(255,255,255,.045)"
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: "#9aa3ba",
+            precision: 0
+          },
+          grid: {
+            color: "rgba(255,255,255,.055)"
           }
         }
       }
+    };
+
+    new Chart(document.getElementById("timelineChart"), {
+      type: "line",
+      data: {
+        labels: dashboardData.timeline.map(item => item.label),
+        datasets: [
+          {
+            label: "Всего наказаний",
+            data: dashboardData.timeline.map(item => item.punishments),
+            borderColor: "#5865F2",
+            backgroundColor: "rgba(88,101,242,.18)",
+            tension: 0.32,
+            fill: false,
+            borderWidth: 3,
+            pointRadius: 3
+          },
+          {
+            label: "Муты",
+            data: dashboardData.timeline.map(item => item.mutes),
+            borderColor: "#4EA8FF",
+            backgroundColor: "rgba(78,168,255,.18)",
+            tension: 0.32,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 2
+          },
+          {
+            label: "Баны",
+            data: dashboardData.timeline.map(item => item.bans),
+            borderColor: "#FF6B81",
+            backgroundColor: "rgba(255,107,129,.18)",
+            tension: 0.32,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 2
+          },
+          {
+            label: "Мероприятия",
+            data: dashboardData.timeline.map(item => item.events),
+            borderColor: "#39D98A",
+            backgroundColor: "rgba(57,217,138,.18)",
+            tension: 0.32,
+            fill: false,
+            borderWidth: 2,
+            pointRadius: 2
+          }
+        ]
+      },
+      options: commonOptions
     });
 
-    new Chart(document.getElementById("rewardChart"), {
+    new Chart(document.getElementById("typesChart"), {
       type: "doughnut",
       data: {
-        labels: moderators.map(x => x.display_name || x.username || x.discord_id),
+        labels: ["Муты", "Баны"],
         datasets: [{
-          data: moderators.map(x => x.reward.finalReward || 0),
-          borderWidth: 2
+          data: [
+            dashboardData.summary.mutes,
+            dashboardData.summary.bans
+          ],
+          backgroundColor: [
+            "#4EA8FF",
+            "#FF6B81"
+          ],
+          borderColor: "#23273a",
+          borderWidth: 3,
+          hoverOffset: 12
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: "64%",
         plugins: {
           legend: {
             position: "bottom",
             labels: {
-              color: chartTextColor,
-              padding: 14
+              color: "#c6cdea",
+              padding: 18,
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            backgroundColor: "#111827",
+            titleColor: "#ffffff",
+            bodyColor: "#dbe3ff",
+            borderColor: "rgba(255,255,255,.12)",
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label(context) {
+                const values = context.dataset.data.map(Number);
+                const total = values.reduce((sum, value) => sum + value, 0);
+                const value = Number(context.raw || 0);
+                const percent = total > 0
+                  ? ((value / total) * 100).toFixed(1)
+                  : "0.0";
+
+                return `${context.label}: ${value} (${percent}%)`;
+              }
             }
           }
         }
       }
     });
 
-   async function downloadBlock(id, filename) {
-  const element = document.getElementById(id);
-
-  if (!element) {
-    alert("Блок не найден");
-    return;
-  }
-
-  try {
-    element.classList.add("exportMode");
-
-    const canvas = await html2canvas(element, {
-      backgroundColor: "#080b13",
-      scale: 2,
-      useCORS: true
+    new Chart(document.getElementById("hoursChart"), {
+      type: "bar",
+      data: {
+        labels: dashboardData.hourly.map(item => item.label),
+        datasets: [{
+          label: "Наказания",
+          data: dashboardData.hourly.map(item => item.total),
+          backgroundColor: "#5865F2",
+          borderColor: "#7B84FF",
+          borderWidth: 1,
+          borderRadius: 8
+        }]
+      },
+      options: commonOptions
     });
 
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  } catch (error) {
-    alert("Ошибка сохранения PNG: " + error.message);
-  } finally {
-    element.classList.remove("exportMode");
-  }
-}
+    new Chart(document.getElementById("weekdaysChart"), {
+      type: "bar",
+      data: {
+        labels: dashboardData.weekdays.map(item => item.label),
+        datasets: [
+          {
+            label: "Наказания",
+            data: dashboardData.weekdays.map(item => item.punishments),
+            backgroundColor: "#5865F2",
+            borderColor: "#7B84FF",
+            borderWidth: 1,
+            borderRadius: 8
+          },
+          {
+            label: "Мероприятия",
+            data: dashboardData.weekdays.map(item => item.events),
+            backgroundColor: "#39D98A",
+            borderColor: "#6BE5AA",
+            borderWidth: 1,
+            borderRadius: 8
+          }
+        ]
+      },
+      options: commonOptions
+    });
+
+    async function downloadBlock(id, filename) {
+      const element = document.getElementById(id);
+
+      if (!element) {
+        alert("Блок не найден");
+        return;
+      }
+
+      element.classList.add("exportMode");
+
+      try {
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        const canvas = await html2canvas(element, {
+          backgroundColor: "#0c101c",
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      } catch (error) {
+        alert("Ошибка сохранения PNG: " + error.message);
+      } finally {
+        element.classList.remove("exportMode");
+      }
+    }
   </script>
 </body>
 </html>

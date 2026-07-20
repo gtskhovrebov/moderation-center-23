@@ -3,151 +3,238 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Донат недели</title>
+  <title>Выплаты модераторам</title>
+
   <link rel="stylesheet" href="/styles.css">
+
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+
+<meta name="theme-color" content="#5865F2">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<link rel="manifest" href="/manifest.webmanifest">
+
+<meta name="theme-color" content="#5865F2">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="MC23">
+
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
 
-<body>
-
-<div class="bg1"></div>
-<div class="bg2"></div>
-
-<div class="container">
-
-<header>
-  <div>
-    <a href="/dashboard" class="back">← Назад</a>
-    <h1>Донат недели</h1>
-    <p>Рейтинг выплат, топ модераторов и зона риска</p>
-  </div>
-
-  <div class="donateBig">
-    <span>Итого</span>
-    <b><%= totalReward %> GC</b>
-  </div>
-</header>
-
-<section class="panel" id="rewards-panel">
-  <div class="panelHeader row">
-    <div>
-      <h3>Кураторы гос</h3>
-      <p>Сортировка от большей выплаты к меньшей</p>
-    </div>
-
-    <div class="actions">
-      <button class="button" onclick="copyRewards()">Скопировать для выдачи</button>
-      <button class="button" onclick="downloadBlock('rewards-panel', 'rewards-list.png')">Сохранить PNG</button>
-    </div>
-  </div>
-
-  <div class="rewardCards">
-    <% moderators
-      .slice()
-      .sort((a, b) => b.reward.finalReward - a.reward.finalReward)
-      .forEach((m, index) => {
-        const reward = m.reward.finalReward;
-        const activity = (m.punishments_7d || 0) + (m.events_7d || 0);
-        const wrong = m.wrong_punishments || 0;
-        const risk = reward <= 150 || activity <= 2 || wrong >= 2;
-        const top = index <= 2 || reward >= 450;
-    %>
-
-      <div class="rewardRow <%= top ? 'top' : '' %> <%= risk ? 'risk' : '' %>">
-        <div class="place">
-          <%= index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}` %>
-        </div>
-
-        <div class="rewardPerson">
-          <b><%= m.display_name || m.username || m.discord_id %></b>
-          <span>
-            Активность: <%= activity %> · Ошибок: <%= wrong %> · Мероприятий: <%= m.events_7d || 0 %>
-          </span>
-        </div>
-
-        <div class="rewardMeta">
-          <% if (top) { %>
-            <span class="badge good">Топ</span>
-          <% } %>
-
-          <% if (risk) { %>
-            <span class="badge danger">Зона риска</span>
-          <% } else { %>
-            <span class="badge normal">Норма</span>
-          <% } %>
-        </div>
-
-        <div class="rewardAmount">
-          <%= reward %>
-        </div>
-      </div>
-
-    <% }) %>
-  </div>
-</section>
-
-</div>
-
 <script>
-const rewards = <%- JSON.stringify(
-  moderators
-    .slice()
-    .sort((a, b) => b.reward.finalReward - a.reward.finalReward)
-    .map(m => ({
-      name: m.display_name || m.username || m.discord_id,
-      reward: m.reward.finalReward
-    }))
-) %>;
-
-function cleanNickname(name) {
-  return String(name || "")
-    .replace(/[^\wА-Яа-яЁё]/g, "")
-    .replace(/\s+/g, "_")
-    .trim();
-}
-
-async function copyRewards() {
-  const text = [
-    "Кураторы гос",
-    ...rewards.map(item => `${cleanNickname(item.name)} ${item.reward}`)
-  ].join("\n");
-
-  try {
-    await navigator.clipboard.writeText(text);
-    alert("Список выплат скопирован");
-  } catch (error) {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.style.position = "fixed";
-    textarea.style.left = "-9999px";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-    alert("Список выплат скопирован");
-  }
-}
-
-async function downloadBlock(id, filename) {
-  const element = document.getElementById(id);
-
-  const canvas = await html2canvas(element, {
-    backgroundColor: "#080b13",
-    scale: 2,
-    useCORS: true,
-    scrollX: 0,
-    scrollY: 0,
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight
-  });
-
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js");
 }
 </script>
 
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch((error) =>
+          console.error("Service Worker registration failed:", error)
+        );
+    });
+  }
+</script>
+
+<body>
+  <div class="bg1"></div>
+  <div class="bg2"></div>
+
+  <div class="container">
+    <header>
+      <div>
+        <a
+          href="/dashboard?period=<%= period %>&date=<%= range.dateValue %><%= period === 'custom' ? `&from=${range.fromValue}&to=${range.toValue}` : '' %>"
+          class="back"
+        >
+          ← Назад
+        </a>
+
+        <h1>Выплаты — <%= periodTitle %></h1>
+
+        <div class="period-selector">
+          <a class="<%= period === 'day' ? 'active' : '' %>" href="/rewards?period=day">Сегодня</a>
+          <a class="<%= period === 'yesterday' ? 'active' : '' %>" href="/rewards?period=yesterday">Вчера</a>
+          <a class="<%= period === 'week' ? 'active' : '' %>" href="/rewards?period=week">Неделя</a>
+          <a class="<%= period === 'previous_week' ? 'active' : '' %>" href="/rewards?period=previous_week">Прошлая неделя</a>
+          <a class="<%= period === 'month' ? 'active' : '' %>" href="/rewards?period=month">Месяц</a>
+          <a class="<%= period === 'previous_month' ? 'active' : '' %>" href="/rewards?period=previous_month">Прошлый месяц</a>
+          <a class="<%= period === 'year' ? 'active' : '' %>" href="/rewards?period=year">Год</a>
+          <a class="<%= period === 'all' ? 'active' : '' %>" href="/rewards?period=all">Всё время</a>
+        </div>
+
+        <p>Рейтинг выплат за выбранный период</p>
+      </div>
+
+      <div class="donateBig">
+        <span>Итого</span>
+        <b><%= totalReward %> GC</b>
+      </div>
+    </header>
+
+    <section class="panel" id="rewards-panel">
+      <div class="panelHeader row">
+        <div>
+          <h3>Топ модераторов по выплатам</h3>
+          <p>Сортировка от большей выплаты к меньшей</p>
+        </div>
+
+        <div class="actions">
+          <button class="button" onclick="copyRewards()">
+            Скопировать для выдачи
+          </button>
+
+          <button
+            class="button"
+            onclick="downloadBlock('rewards-panel', 'rewards-list.png')"
+          >
+            Сохранить PNG
+          </button>
+        </div>
+      </div>
+
+      <div class="rewardCards">
+        <% moderators.forEach((m, index) => {
+          const reward = Number(m.reward?.finalReward || 0);
+          const activity = Number(m.activity || 0);
+          const wrong = Number(m.wrong || 0);
+          const events = Number(m.events || 0);
+          const risk = reward <= 150 || activity <= 2 || wrong >= 2;
+          const top = index <= 2 || reward >= 450;
+        %>
+
+          <div class="rewardRow <%= top ? 'top' : '' %> <%= risk ? 'risk' : '' %>">
+            <div class="place">
+              <%= index === 0
+                ? "🥇"
+                : index === 1
+                  ? "🥈"
+                  : index === 2
+                    ? "🥉"
+                    : `#${index + 1}` %>
+            </div>
+
+            <div class="rewardPerson">
+              <b><%= m.display_name || m.username || m.discord_id %></b>
+
+              <span>
+                Активность: <%= activity %> ·
+                Ошибок: <%= wrong %> ·
+                Мероприятий: <%= events %>
+              </span>
+            </div>
+
+            <div class="rewardMeta">
+              <% if (top) { %>
+                <span class="badge good">Топ</span>
+              <% } %>
+
+              <% if (risk) { %>
+                <span class="badge danger">Зона риска</span>
+              <% } else { %>
+                <span class="badge normal">Норма</span>
+              <% } %>
+            </div>
+
+            <div class="rewardAmount"><%= reward %></div>
+          </div>
+
+        <% }) %>
+
+        <% if (!moderators.length) { %>
+          <div class="emptyTable">Данных за выбранный период нет.</div>
+        <% } %>
+      </div>
+    </section>
+  </div>
+
+  <script id="rewards-data" type="application/json">
+    <%- JSON.stringify(
+      moderators.map(m => ({
+        name: m.display_name || m.username || m.discord_id,
+        reward: Number(m.reward?.finalReward || 0)
+      }))
+    ).replace(/</g, "\\u003c") %>
+  </script>
+
+  <script>
+    const rewards = JSON.parse(
+      document.getElementById("rewards-data").textContent
+    );
+
+    function cleanNickname(name) {
+      return String(name || "")
+        .replace(/[^\wА-Яа-яЁё]/g, "")
+        .replace(/\s+/g, "_")
+        .trim();
+    }
+
+    async function copyRewards() {
+      const text = [
+        "Модераторы",
+        ...rewards.map(item => `${cleanNickname(item.name)} ${item.reward}`)
+      ].join("\n");
+
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("Список выплат скопирован");
+      } catch (error) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+
+        alert("Список выплат скопирован");
+      }
+    }
+
+    async function downloadBlock(id, filename) {
+      const element = document.getElementById(id);
+
+      if (!element) {
+        alert("Блок не найден");
+        return;
+      }
+
+      try {
+        const canvas = await html2canvas(element, {
+          backgroundColor: "#080b13",
+          scale: 2,
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight
+        });
+
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      } catch (error) {
+        alert("Ошибка сохранения PNG: " + error.message);
+      }
+    }
+  </script>
 </body>
 </html>
